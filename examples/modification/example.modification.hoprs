@@ -1,0 +1,22 @@
+
+
+{
+    "@type":"HOPSModification",
+    "bindingBefore":"851932a3eea3031ed937cb7f40ea019e6c52def6a437b6926e03cc3f9aa2645bf2a0050297a0eb6e494bfcd2c896f8730ffb53a4591d92ad91ab7021365dccbe",
+    "bindingAfter":"04cd419ba09bb5c99f5ad4f7a933953f8ad652fb5576646bc636d018973c6a01efc04fa539a61189e96dad4f2e9d720ab11efb9411b724ec8640f65633013dfe",
+    "description":"Cropping to a 1080p resolution",
+    "tools":"GIMP 2.10.34",
+    "modificationDetails":
+        {
+            "script":"HOPSCrop1.0.scm",
+            "parameters":"23,45,1920,1080"
+        },
+    "author": 
+        { 
+            "@type":"Person",
+            "givenName":"Matthew",
+            "familyName":"Pendlebury"
+        },
+    "timeOfModification":"2023-09-04 08:36Z"
+}
+
