@@ -1,0 +1,67 @@
+
+
+
+
+{
+  "@context": "https://schema.org",
+  "@type": "Schema",
+  "name": "HOPSOrigination",
+  "description": "A schema representing the provenance of a photograph.",
+  "properties": {
+    "Photograph": {
+      "@id": "Photograph",
+      "@type": "schema:Photograph",
+      "description": "The photograph that is being provenanced."
+    },
+    "CreatedBy": {
+      "@id": "schema:Creator",
+      "@type": "schema:Person",
+      "description": "The creator of the photograph."
+    },
+    "Author": {
+      "@id": "schema:Author",
+      "@type": "schema:Person",
+      "description": "The author of the photograph."
+    },
+    "CreationDetails": {
+      "@id": "schema:HOPSCreation",
+      "@type": "schema:HOPSCreation",
+      "description": "The creation details of the photograph, such as the origin and technology used."
+    },
+    "Owner": {
+      "@id": "schema:Owner",
+      "@type": "schema:Person",
+      "description": "The owner of the photograph."
+    },
+    "Binding": {
+      "@id": "schema:Binding",
+      "@type": "schema:Text",
+      "description": "The cryptographic hash of the photograph."
+    }
+  }
+}
+
+
+{
+  "@context": "https://schema.org",
+  "@type": "Schema",
+  "name": "HOPSCreation",
+  "description": "A schema representing the creation details of a photograph.",
+  "properties": {
+    "Origin": {
+      "@id": "schema:Origin",
+      "@type": "schema:Text",
+      "description": "The origin of the photograph, such as 'Photography' or 'Digitally created'."
+    },
+    "Technology": {
+      "@id": "schema:Technology",
+      "@type": "schema:Text",
+      "description": "The technology used to create the photograph, such as 'Film' or 'Adobe Photoshop'."
+    },
+    "SecurelyProvenanced": {
+      "@id": "schema:SecurelyProvenanced",
+      "@type": "schema:Boolean",
+      "description": "Whether the photograph has been securely provenanced."
+    }
+  }
+}

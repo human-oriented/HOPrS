@@ -1,0 +1,36 @@
+{
+    "@type":"HOPSOrigination",
+    "Photograph": 
+        {
+            "@context": "https://schema.org",
+            "@type": "Photograph",
+            "@id": "Photograph",
+            "abstract": "this is an abstract",
+            "copyrightNotice": "Copyright J Smith",
+            "copyrightYear": "2023",
+            "dateCreated": "2023-07-25 12:34",
+            "description": "Cat picture"
+        },  
+    "CreatedBy": "Human",
+    "Author": 
+        { 
+            "@type":"Person",
+            "givenName":"John",
+            "familyName":"Smith"
+        },
+    "CreationDetails":
+        {
+            "@type":"HOPSCreation",
+            "Origin":"Photography",
+            "Technology":"Frankli v1.2.3",
+            "SecurelyProvenanced": "True"
+        },
+    "Owner":
+        { 
+            "@type":"Person",
+            "givenName":"John",
+            "familyName":"Smith"
+        },
+    "Binding": "96bc39ca2b1678296fe3504ae9ce31053b38ebca92665a334fecdd76efbc00af468e569eca194e29d2d625344b76c2173ca06b617d377a70e7edec23a1d9e115"
+}
+
