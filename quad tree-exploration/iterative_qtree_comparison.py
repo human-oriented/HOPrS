@@ -10,6 +10,7 @@ class TreeNode:
         self.line = line
         self.children = {}
         self.removed = False
+        self.ham_distance = -1
 
     def add_child(self, path_segment, child_node):
         self.children[path_segment] = child_node
@@ -44,12 +45,16 @@ def draw_comparison(image, node1, node2, output_path, counter):
     
     parts = node1.line.split(',')  #coordinates relative to NODE 1
     x0, y0, x1, y1 = map(int, parts[2:6])
+    x = int(x0 + (x1-x0)/2)
+    y = int(y0 + (y1-y0)/2)
     
     if node1.removed:
-        cv2.rectangle(image, (x0, y0), (x1, y1), (0, 255, 0), 4)
+        cv2.rectangle(image, (x0, y0), (x1, y1), (0, 255, 0), 4)        
+        cv2.putText(image, str(node1.ham_distance), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
     else:
         cv2.rectangle(image, (x0, y0), (x1, y1), (0, 0, 255), 4)
-    
+        cv2.putText(image, str(node1.ham_distance), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 255), 2)
+        
     
     cv2.rectangle(image, (0, 0), (4000,120), (30, 30, 30), -1) #box behind text
     
@@ -57,7 +62,7 @@ def draw_comparison(image, node1, node2, output_path, counter):
 
     cv2.putText(image, text, (30, 100), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 2)
 
-    cv2.imwrite(f"{output_path}/comparison_{counter:04}.jpg", image, [int(cv2.IMWRITE_JPEG_QUALITY), 10])
+    cv2.imwrite(f"{output_path}/comparison_{counter:04}.jpg", image, [int(cv2.IMWRITE_JPEG_QUALITY), 50])
 
 def compare_and_output_images(image, node1, node2, image_path, output_path, threshold, counter=[0]):
     if node1.hash and node2.hash:
@@ -67,7 +72,9 @@ def compare_and_output_images(image, node1, node2, image_path, output_path, thre
             #print(f"Removed?: {node2.removed} {node2.line}")
             
             distance = hamming_distance(node1.hash, node2.hash)
-            print(f"hamming distance is {distance}")
+            node1.ham_distance = distance
+            node2.ham_distance = distance
+            print(f"hamming distance is {distance} for {node1.path}")
             
             if distance <= threshold:
                 #print("distance <= threshold marking as removed")
