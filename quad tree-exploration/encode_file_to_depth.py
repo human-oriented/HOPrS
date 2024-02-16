@@ -2,13 +2,7 @@ import sys
 import cv2
 import pdqhash
 import hashlib
-
-def hash_string_to_hex(input_string):
-    input_bytes = input_string.encode('utf-8')
-    hasher = hashlib.sha256()
-    hasher.update(input_bytes)
-    hex_hash = hasher.hexdigest()
-    return hex_hash
+import os
 
 def bits_to_hex(bits):
     binary_string = ''.join(str(bit) for bit in bits)
@@ -25,12 +19,13 @@ class QuadTreeNode:
         segment_rgb = cv2.cvtColor(segment, cv2.COLOR_BGR2RGB)
         vector, quality = pdqhash.compute(segment_rgb)
         self.phash = bits_to_hex(vector)
-
+        
         coords = f"{box[0]},{box[1]},{box[2]},{box[3]}".replace(',', '.')
-        hashpart = str(hash_string_to_hex(coords + path)).replace(',', '.')
-        filename = f"tmp.uniq.{path}{depth}.{hashpart}_pdq.{self.phash}_{image_path}_tmp_segment_{coords}.jpg".replace(',', '.')
-        cv2.imwrite(filename, segment, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
-
+        filename = f"tmp.D{depth}.{path}.pdq.{self.phash}.{os.path.basename(image_path)}.segment.{coords}.jpg".replace(',', '.')
+        success = cv2.imwrite(filename, segment, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
+        if not success:
+         print(f"Failed to write {filename}. Check the path, permissions, and disk space.")
+        
     def is_leaf_node(self):
         return len(self.children) == 0
 
@@ -51,6 +46,8 @@ class QuadTree:
             print("Error opening the image file. Please check the path and try again.")
             sys.exit(1)
 
+#Interpolate to the same size as the original to ensure that we don't misalign comparison boundaries by compounding errors
+#Not sure this is ultimately successful however.
         if orig_x != 0 or orig_y != 0:
             image = cv2.resize(image, (orig_x, orig_y), interpolation=cv2.INTER_CUBIC)
             cv2.imwrite(f"{self.image_path}_tmp_resized.jpg", image, [int(cv2.IMWRITE_JPEG_QUALITY), 90])

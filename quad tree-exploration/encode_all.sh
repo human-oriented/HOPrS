@@ -3,18 +3,17 @@
 #Encode all the files in the current directory matching *.jpeg (NOT JPG! NOR JPEG)
 #Will create a metric tonne of tmp....jpeg files that are all the segments. 
 #Example file is
-#tmp.uniq.6.f65744dc69c6df1ccc6925b4f4abedbf8b19213ed0977ab542fe51fb65b79f48_pdq.be22aaeaf8cefbe7f377d7775d771df79c679a628a22ba22a802980290029002_hawker_fury.jpeg_tmp_segment_504.0.630.94.jpg
+#tmp.D2.1-.pdq.4872574c95b1ab663bc954bf8d50a94dceb3d2cc4d22a2d92494936b5b6d49b6.hawker_fury.jpeg.segment.0.0.2016.1512.jpg
 #they all start tmp. which is useful for purging them
-#the uniq.6.f65744dc69c6df1ccc6925b4f4abedbf8b19213ed0977ab542fe51fb65b79f48_ part says that the file is depth 6 
-#(which is 5 down from the quadtree root), the f65744dc69c6df1ccc6925b4f4abedbf8b19213ed0977ab542fe51fb65b79f48 is 
-#a crpytographc hash of the coordinate part which is a cheat ONLY to allow these to sort appropriately in a directory so 
-#all the different resolutions of a similar test image appear together for an ls -l this is not a perceptual hash  
-#_pdq.be22aaeaf8cefbe7f377d7775d771df79c679a628a22ba22a802980290029002_hawker_fury.jpeg_tmp_segment_504.0.630.94.jpg
-#this part says that pdq is the perceptual hash algorithm used.  The pdq hash is be22....9002
-#the original file was hawker_fury.jpeg  And this is a segment that is the area of the original file that goes from
-#x0,y0,  x1,y1 504,0  630,94 which is a location in pixels
+#the D2 suggests depth 2 in the quadtree
+#the 1- is the part of the quadtree path.  May also be 1-4-3-1-2-3-1- etc.  
+#pdq is the hashing algorithm used
+#4872574c95b1ab663bc954bf8d50a94dceb3d2cc4d22a2d92494936b5b6d49b6 is the perceptual hash
+#hawker_fury.jpeg is the basename of the file used.  If you've specified ../../somepath/image.jpg it'll just be image.jpg
+#segment.0.0.2016.1512 just describes the segment and from x0,y0,x1,y1 (this happens to be the top left quarter of an image)
 
-
+#This previously used to contain a cryptographic hash - this is no longer present, ordering will happen based on the 
+#depth and path parts. 
 #the above is just debug to verify visually the comparisons.
 
 #Will also create a file that is <filename>.hoprs which has the quadtree in 
