@@ -30,7 +30,7 @@ def calc_hash(image_path):
 
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     vector, quality = pdqhash.compute(image_rgb)
-    return bits_to_hex(vector)
+    return bits_to_hex(vector), quality
 
 if __name__ == "__main__":
     # Search for jpg and jpeg files in the current directory
@@ -43,6 +43,6 @@ if __name__ == "__main__":
     print("filename,pdqhash")
     
     for image_path in files:
-        hash_result = calc_hash(image_path)
+        hash_result, quality = calc_hash(image_path)
         if hash_result:
-            print(f"{image_path},{hash_result}")
+            print(f"{image_path},{hash_result},{quality}")
