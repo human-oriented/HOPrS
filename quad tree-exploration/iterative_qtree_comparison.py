@@ -47,8 +47,7 @@ def mark_as_removed(node):
         mark_as_removed(child)
 
 def draw_comparison(image, node1, node2, output_path, counter):
-    if not debug_mode and counter[0] != -1:  # Skip saving intermediate images unless in debug mode
-        return
+
 
     parts = node1.line.split(',')
     x0, y0, x1, y1 = map(int, parts[2:6])
@@ -62,7 +61,8 @@ def draw_comparison(image, node1, node2, output_path, counter):
     cv2.rectangle(image, (0, 0), (4000, 120), (30, 30, 30), -1)  # Box behind text
     text = f"Path: {node1.path} Hash1: {node1.hash} vs Hash2: {node2.hash} Counter: {counter[0]} Removed: {node1.removed}"
     cv2.putText(image, text, (30, 100), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 2)
-    
+    if not debug_mode and counter[0] != -1:  # Skip saving intermediate images unless in debug mode
+        return
     cv2.imwrite(f"{output_path}/comparison_{counter[0]:04}.jpg", image, [int(cv2.IMWRITE_JPEG_QUALITY), 50])
 
 def compare_and_output_images(image, node1, node2, image_path, output_path, threshold, counter=[0], compare_depth=99):
@@ -93,12 +93,7 @@ def main(image_path: str, file1_path: str, file2_path: str, output_path: str, th
     tree2 = parse_file_to_tree(file2_path)
     
     image = cv2.imread(image_path) #caution of rotated images that cv2 doesn't handle
-    #print(f"x: {image.x}, y: {image.y}")
-    
-    
-    
-    #tree1.line  - look at the first line and figure out if W>H or H>W 
-    
+ 
     compare_and_output_images(image, tree1, tree2, image_path, output_path, threshold, [0], compare_depth)
     
     # In non-debug mode, save the last image again to ensure the final state is preserved
