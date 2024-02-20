@@ -93,7 +93,7 @@ def main(image_path: str, file1_path: str, file2_path: str, output_path: str, th
     tree2 = parse_file_to_tree(file2_path)
     
     image = cv2.imread(image_path) #caution of rotated images that cv2 doesn't handle
-    printf(f"x: {image.x}, y: {image.y}")
+    #print(f"x: {image.x}, y: {image.y}")
     
     
     
