@@ -4,6 +4,13 @@ import pdqhash
 import hashlib
 import os
 
+#TODO - better pattern needed for command line parsing
+debug_mode = '--debug' in sys.argv
+if debug_mode:
+    sys.argv.remove('--debug')
+
+
+
 def bits_to_hex(bits):
     binary_string = ''.join(str(bit) for bit in bits)
     hex_string = format(int(binary_string, 2), 'x')
@@ -21,9 +28,15 @@ class QuadTreeNode:
         self.phash = bits_to_hex(vector)
         self.quality = quality
         
+        
+        if not debug_mode:
+            #don't output the segments
+            return
+
         coords = f"{box[0]},{box[1]},{box[2]},{box[3]}".replace(',', '.')
         filename = f"tmp.D{depth}.{path}.pdq.{self.phash}.quality{quality}.{os.path.basename(image_path)}.segment.{coords}.png".replace(',', '.')
         success = cv2.imwrite(filename, segment)
+        
         if not success:
             print(f"Failed to write {filename}. Check the path, permissions, and disk space.")
         
@@ -39,6 +52,7 @@ class QuadTree:
 
     def build_tree(self, orig_x, orig_y):
         try:
+            #print(f"DEBUG: reading {self.image_path}")
             image = cv2.imread(self.image_path)
             if image is None:
                 print("Error opening the image file. Please check the path and try again.")
@@ -48,7 +62,7 @@ class QuadTree:
             sys.exit(1)
 
 #Interpolate to the same size as the original to ensure that we don't misalign comparison boundaries by compounding errors
-#Not sure this is ultimately successful however.
+#May not be making much difference.  To be tested
         if orig_x != 0 or orig_y != 0:
             image = cv2.resize(image, (orig_x, orig_y), interpolation=cv2.INTER_CUBIC)
             cv2.imwrite(f"{self.image_path}_tmp_resized.png", image)
@@ -79,22 +93,22 @@ class QuadTree:
 
         return node
 
-    def print_tree(self, node=None, level=0, path=''):
+    def print_tree(self, file, node=None, level=0, path=''):
         if node is None:
             node = self.root
 
         x0, y0, x1, y1 = node.box
         width, height = x1 - x0, y1 - y0
-
-        print(f"{path},{level},{x0},{y0},{x1},{y1},{width},{height},pdq,{node.phash},quality {node.quality}")
+        file.write(f"{path},{level},{x0},{y0},{x1},{y1},{width},{height},pdq,{node.phash},quality {node.quality}\n")
 
         for index, child in enumerate(node.children):
             new_path = f"{path}{index+1}-" if path else f"{index+1}-"
-            self.print_tree(child, level + 1, new_path)
+            self.print_tree(file, child, level + 1, new_path)
 
 if __name__ == "__main__":
     if not (len(sys.argv) == 3 or len(sys.argv) == 5):
-        print("Usage: python encode_file_to_depth.py image_path max_depth [orig_x] [orig_y]")
+        print("Usage: python encode_file_to_depth.py image_path max_depth [orig_x] [orig_y] --debug")
+        print("--debug will emit the images that make up the segments that are being compared")
         sys.exit(1)
 
     image_path = sys.argv[1]
@@ -106,5 +120,9 @@ if __name__ == "__main__":
         quad_tree = QuadTree(image_path, max_depth, orig_x, orig_y)
     else:
         quad_tree = QuadTree(image_path, max_depth, 0, 0)
-    
-    quad_tree.print_tree()
+    try:
+        file = open(image_path+".hoprs", "w")
+    except: 
+        print("ERROR: Couldn't open " +image_path + ".hoprs for write" )
+    quad_tree.print_tree(file)
+    file.close()
