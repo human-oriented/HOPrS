@@ -19,14 +19,14 @@
 #Will create a file that is <filename>.hoprs which has the quadtree in 
 
 echo "Starting to process pngs"
-for file in *.png;do python ../../encode_file_to_depth.py $file 10 4032 3024 && echo $file ; done 
+for file in *.png;do python ../../encode_file_to_depth.py $file 10  && echo $file ; done 
 
 echo "Starting to process jpgs"
-for file in *.jpg;do python ../../encode_file_to_depth.py $file 10 4032 3024 && echo $file ; done 
+for file in *.jpg;do python ../../encode_file_to_depth.py $file 10  && echo $file ; done 
 
 echo "Starting to process jpegs"
 
-for file in *.jpeg;do python ../../encode_file_to_depth.py $file 10 4032 3024 && echo $file ; done 
+for file in *.jpeg;do python ../../encode_file_to_depth.py $file 10 && echo $file ; done 
 
 echo Completed you now have the following .hoprs files
 ls -l *.hoprs
