@@ -30,7 +30,7 @@ def crop_image(input_image_path, output_directory, x=None, y=None, width=None, h
     if x is not None and y is not None and width is not None and height is not None:
         # Crop based on specified coordinates and dimensions
         cropped_image = original_image.crop((x, y, x + width, y + height))
-        output_filename = f"cropped_{os.path.basename(input_image_path)}_{x}_{y}_{width}x{height}.jpg"
+        output_filename = f"cropped_{os.path.basename(input_image_path)}_{x}_{y}_{width}x{height}.png"
     elif percentage is not None:
         # Crop based on percentage of the image's center
         center_x = original_width // 2
@@ -45,7 +45,7 @@ def crop_image(input_image_path, output_directory, x=None, y=None, width=None, h
         lower = min(original_height, upper + crop_height)
 
         cropped_image = original_image.crop((left, upper, right, lower))
-        output_filename = f"cropped_{os.path.basename(input_image_path)}_{percentage}percent.jpg"
+        output_filename = f"cropped_{os.path.basename(input_image_path)}_{percentage}percent.png"
     else:
         print("Error: Specify either coordinates and dimensions or a percentage.")
         sys.exit(1)
