@@ -23,6 +23,10 @@ class TreeNode:
 def parse_file_to_tree(filepath):
     with open(filepath, 'r') as f:
         first_line = next(f, None)
+        #discard first line which is details of the cropping or not
+        first_line = next(f, None)
+        
+        
         root = TreeNode(first_line.strip(), is_root=True) if first_line else None
         
         for line in f:
