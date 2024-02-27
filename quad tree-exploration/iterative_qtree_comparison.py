@@ -24,7 +24,7 @@ class TreeNode:
         self.ham_distance = -1
         self.matched = Matched.UNKNOWN
         self.purge = False #Will be set to true later if all subnodes don't match
-
+        self.optimise = False
 
     def add_child(self, path_segment, child_node):
         self.children[path_segment] = child_node
@@ -55,6 +55,38 @@ class TreeNode:
         for child in self.children.values():
             child.purge_tree()
 
+    #Call this after the purge.  It'll also reduce out the unknown state. 
+    def should_optimise(self):
+        print(f"should_optimise entered {str(self.path)} matched {self.matched}")
+        # Check if the current node should be purged
+
+        
+        if self.matched == Matched.YES:
+            print(f"  1 Matched(green)  - can't optimise {str(self.path)} matched={self.matched} ")
+            return False
+        
+        if self.matched == Matched.NO and self.purge == False:
+            print(f"  1 Matched(green) - don't look further than this {str(self.path)} matched={self.matched} ")
+            return False
+        #print(f"  3 red.  Number of children {len(self.children.values())} ")
+        # Recursively check if all children should be purged
+        for child in self.children.values():
+            #print(f"  4 this node {self.path} and iterated child: {child.path} ")
+            if not child.should_optimise():
+                #print(f"  2 NO False child says it shouldn't purge: {str(child.path)} ")
+                return False
+            
+        # If the node and all its children should be purged,
+        # set purge to True and return True
+        self.optimise = True
+        print(f"  Optimising this node {str(self.path)} which has hamming {self.ham_distance}")
+        return True
+    
+    def optimise_tree(self):
+        self.should_optimise()
+        for child in self.children.values():
+            child.optimise_tree()
+
     def print_tree(self, file, unpurged_only):
         
         parts = self.line.split(',')
@@ -74,6 +106,25 @@ class TreeNode:
 
         for child in self.children.values():
             child.print_tree(file, unpurged_only)
+
+    def print_optimised_tree(self, file):
+        
+        parts = self.line.split(',')
+        x0, y0, x1, y1 = map(int, parts[2:6])
+        quality = parts[10]
+        level = parts[1]
+        path = parts[0]
+        width, height = x1 - x0, y1 - y0
+        
+        if self.optimise:
+            #explicitly stop recursion into sub elements although they /should/ all be purged=True
+            return
+    #print(f"print_tree Called with path {str(path)}")
+        
+        file.write(f"{path},{level},{x0},{y0},{x1},{y1},{width},{height},pdq,{self.hash},{quality}\n")
+
+        for child in self.children.values():
+            child.print_optimised_tree(file)
 
 
 
@@ -164,9 +215,14 @@ def main(original_image: str, original_image_qt: str, new_image: str, new_image_
         draw_comparison(image, tree1, tree2, new_image_output_path, [-1])  # Use a unique counter to indicate the last image
 
     tree1.purge_tree()#remove all the nodes that are unmatched AND all children are also unmatched
-
+    tree1.optimise_tree()#also create a tree that is a minimal node set. 
+    
     with open('tmp.purged.qt', 'w') as f:
         tree1.print_tree(f, True) #write the newly purged tree to 
+
+    with open('tmp.optimised.qt', 'w') as f:
+        tree1.print_optimised_tree(f) #write the newly purged tree to 
+
 
 
 if __name__ == "__main__":
