@@ -4,12 +4,9 @@ import pdqhash
 import hashlib
 import os
 import numpy as np
-
-
-#TODO - better pattern needed for command line parsing
-debug_mode = '--debug' in sys.argv
-if debug_mode:
-    sys.argv.remove('--debug')
+import argparse
+import json
+from datetime import datetime
 
 
 
@@ -17,9 +14,8 @@ def bits_to_hex(bits):
     binary_string = ''.join(str(bit) for bit in bits)
     hex_string = format(int(binary_string, 2), 'x')
     return hex_string
-
 class QuadTreeNode:
-    def __init__(self, image, box, depth, path='', image_path=''):
+    def __init__(self, image, box, depth, path=''):
         self.box = box
         self.children = []
         self.depth = depth
@@ -31,46 +27,24 @@ class QuadTreeNode:
         self.quality = quality
         
         
-        if not debug_mode:
-            #don't output the segments
-            return
-
-        coords = f"{box[0]},{box[1]},{box[2]},{box[3]}".replace(',', '.')
-        filename = f"tmp.D{depth}.{path}.pdq.{self.phash}.quality{quality}.{os.path.basename(image_path)}.segment.{coords}.png".replace(',', '.')
-        success = cv2.imwrite(filename, segment)
-        
-        if not success:
-            print(f"Failed to write {filename}. Check the path, permissions, and disk space.")
-        
     def is_leaf_node(self):
         return len(self.children) == 0
 
 class QuadTree:
-    def __init__(self, image_path, max_depth, orig_x=0, orig_y=0, x0=0, y0=0, x1=0, y1=0):
+    def __init__(self, image, file_hoprs, file_qt, max_depth, orig_x=0, orig_y=0, x0=0, y0=0, x1=0, y1=0):
         self.root = None
         self.max_depth = max_depth
-        self.image_path = image_path
-        self.build_tree(orig_x, orig_y,x0, y0, x1, y1)
+        self.image = image
+        self.build_tree(orig_x, orig_y, x0, y0, x1, y1)
         
 
     def build_tree(self, orig_x, orig_y, x0, y0, x1, y1):
-        try:
-            #print(f"DEBUG: reading {self.image_path}")
-            image = cv2.imread(self.image_path)
-            if image is None:
-                print("Error opening the image file. Please check the path and try again.")
-                sys.exit(1)
-        except IOError:
-            print("Error opening the image file. Please check the path and try again.")
-            sys.exit(1)
-
-    
+        image = self.image
 
 #Interpolate to the same size as the original to ensure that we don't misalign comparison boundaries by compounding errors
 #May not be making much difference.  To be tested
         if not (x0 == 0 and y0 == 0 and x1 ==0 and y1 ==0):
             #This is a crop.  We need to resize 
-            
             full_image = np.zeros((orig_y, orig_x, 3), dtype=np.uint8)
             new_width = x1 - x0
             new_height = y1 - y0
@@ -88,7 +62,7 @@ class QuadTree:
 
     def split_image(self, image, box, depth, path=''):
         x0, y0, x1, y1 = box
-        node = QuadTreeNode(image, box, depth, path, self.image_path)
+        node = QuadTreeNode(image, box, depth, path)
 
         if depth >= self.max_depth:
             return node
@@ -122,56 +96,104 @@ class QuadTree:
             self.print_tree(file, child, level + 1, new_path)
 
 if __name__ == "__main__":
-    if not (len(sys.argv) == 3 or len(sys.argv) == 5 or len(sys.argv)==9):
-        print("Usage: python encode_file_to_depth.py image_path max_depth [origsize_x] [origsize_y] [x0] [y0] [x1] [y1] --debug")
-        print("--debug will emit the images that make up the segments that are being compared")
-        print("origsize is the size of the original image in x and y pixels, using this option will request that the image is resized to that size using bucubic expansion before the tree is built")
-        print("x0 y0 x1 y1 are the coordinates of this image in the coordinate system of the original. Specify these if you have cropped an image")
-        print("Think of these as the coordinates of the rectangular crop box")
-        
-        sys.exit(1)
+ 
+#        print("Usage: python encode_file_to_depth.py -i <image> -d <depth> [-crop x0 y1 x1 y1] [-resize prev_width prev_height] --debug")
+#        print("origsize is the size of the original image in x and y pixels, using this option will request that the image is resized to that size using bucubic expansion before the tree is built")
+#        print("x0 y0 x1 y1 are the coordinates of this image in the coordinate system of the original. Specify these if you have cropped an image")
+#        print("Think of these as the coordinates of the rectangular crop box")
+#        
 
-    image_path = sys.argv[1]
-    max_depth = int(sys.argv[2])
+    parser = argparse.ArgumentParser(description='Encode an image to a hoprs and qt file.')
+    parser.add_argument('-i', '--input',  type=str, required=True, help='Input image filename (and related <filename>.hoprs) file')
+    parser.add_argument('-d', '--depth',  type=int, required=True, help='Depth of quad tree')
     
+    parser.add_argument('-r', '--resize',  type=str, nargs=2, required=False, help='Dimensions that this image was resized FROM (not current size)')
+    parser.add_argument('-c', '--crop',  type=str, nargs=4, required=False, help='top left and bottom right coordinates in px x0 y0 x1 y1')
+    parser.add_argument('-n', '--note', type=str, required=False, help="A short description of what this edit was in quotes")
+    args = parser.parse_args()
+
+    image_path = args.input
+    image_hoprs = args.input + ".hoprs" 
+    image_qt = args.input + ".qt"
+    max_depth = args.depth
     
     try:
-        path = image_path+".hoprs"
-        file = open(path, "w")
-        print(f"Creating {path}")
-    except: 
-        print("ERROR: Couldn't open " +image_path + ".hoprs for write" )
-
+        image = cv2.imread(image_path)
+        if image is None:
+            print(f"Error opening image {image_path}. Please check the path and try again.")
+            sys.exit(1)
+    except IOError:
+        print(f"Error opening image {image_path}. Please check the path and try again.")
+        sys.exit(1)
+    print(f"Opened (read) {image_path}")
     
-    if len(sys.argv) == 5:
-        #specifying a resize
-        orig_x = int(sys.argv[3])
-        orig_y = int(sys.argv[4])
-        quad_tree = QuadTree(image_path, max_depth, orig_x, orig_y)
-        file.write(f"Origin reference,{0},{0},{0},{0},{orig_x},{orig_y}\n")
+    try:
+        file_qt = open(image_qt, "w")
+        print(f"Opened (write) {image_qt}")
+        
+    except: 
+        print(f"ERROR: Couldn't open {image_qt} for write" )
+        sys.exit(-1)
 
-    elif len(sys.argv) == 3:
-        #clean config
-        quad_tree = QuadTree(image_path, max_depth)
-        file.write(f"Origin reference,{0},{0},{0},{0},{0},{0}\n")
+    if args.crop:
+        x0 =     args.crop[0]
+        y0 =     args.crop[1]
+        x1 =     args.crop[2]
+        y1 =     args.crop[3]
+    else:
+        x0=0
+        y0=0
+        x1=0
+        y1=0
+    
+    if args.resize:
+        orig_x = args.resize[0]
+        orig_y = args.resize[1]
+    else:
+        orig_x = 0
+        orig_y = 0
 
-    elif len(sys.argv) == 9 :
-        #Specifying a crop
-        orig_x = int(sys.argv[3])
-        orig_y = int(sys.argv[4])
-        x0 =     int(sys.argv[5])
-        y0 =     int(sys.argv[6])
-        x1 =     int(sys.argv[7])
-        y1 =     int(sys.argv[8])
-        print(f"Specifying a crop {x0},{y0},{x1},{y1},{orig_x},{orig_y}")
-        quad_tree = QuadTree(image_path, max_depth, orig_x, orig_y, x0, y0, x1, y1)        
-        print("DEBUG 2")
-        file.write(f"Origin reference,{x0},{y0},{x1},{y1},{orig_x},{orig_y}\n")
+    try:
+        file_hoprs = open(image_hoprs, "w")
+        print(f"Opened (write) {image_hoprs}")        
+        # Get the current date and time in UTC
+        current_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%SZ')
+
+        if args.note:
+            comment = args.note
+        else:
+            comment = "Need a meaningful comment in here at some point"
+       # Data to be written to JSON, with the current time
+        data = {       
+            "When": current_time,
+            "What": "ENCODED",
+            "orig_width": str(orig_x),
+            "orig_height": str(orig_y),
+            "x0": str(x0),
+            "y0": str(y0),
+            "x1": str(x1),
+            "y1": str(y1),
+            "Format": "PNG",
+            "Image_file": image_path,
+            "QT_file": image_qt,
+            "Encoded_depth": str(max_depth),
+            "Perceptual_algorithm": "PDQ",
+            "Comment": comment
+        }
+        json.dump(data, file_hoprs, indent=4)
+        print(f"Written .hoprs file data")
+        file_hoprs.close()
+    except: 
+        print(f"ERROR: Writing {image_hoprs}" )
+        sys.exit(-1)
+
+    quad_tree = QuadTree(image, file_hoprs, file_qt, max_depth, orig_x, orig_y, x0, y0, x1, y1)
+
     print("Building quad tree")
-    quad_tree.print_tree(file)
+    quad_tree.print_tree(file_qt)
     print("Finished constructing quadtree")
-    file.close()
+    file_qt.close()
 
-    print("Finishing up")
+    print("Finishing up closing qt")
 
 
