@@ -26,10 +26,13 @@ for file in *.jpg;do python ../../encode_file_to_depth.py -i $file -d 10  && ech
 
 echo "Starting to process jpegs"
 
-for file in *.jpeg;do python ../../encode_file_to_depth.py -i $file -d 10 && echo $file ; done 
+for file in *.jpeg;do python ../../encode_file_to_depth.py -i $file -d  10 && echo $file ; done 
 
 echo Completed you now have the following .hoprs files
 ls -l *.hoprs
+echo Completed you now have the following .qt files
+ls -l *.qt
+
 
 #From the output of this you can inspect each segment in different resolutions of the same file to be confident that 
 #the right segments have ben generated and that the perceptual hashes are reasonable
