@@ -43,7 +43,7 @@ class TreeNode:
             if not child.should_purge():
                 #print(f"  2 NO False child says it shouldn't purge: {str(child.path)} ")
                 return False
-            
+
         # If the node and all its children should be purged,
         # set purge to True and return True
         self.purge = True
@@ -60,26 +60,22 @@ class TreeNode:
         print(f"should_optimise entered {str(self.path)} matched {self.matched}")
         # Check if the current node should be purged
 
-        
-        if self.matched == Matched.YES:
-            print(f"  1 Matched(green)  - can't optimise {str(self.path)} matched={self.matched} ")
+        if self.purge == False and (self.matched == Matched.YES or self.matched == Matched.NO):
+            print(f"  Can't optimise {str(self.path)} matched={self.matched} and purge(red)={self.purge}")
             return False
         
-        if self.matched == Matched.NO and self.purge == False:
-            print(f"  1 Matched(green) - don't look further than this {str(self.path)} matched={self.matched} ")
-            return False
         #print(f"  3 red.  Number of children {len(self.children.values())} ")
         # Recursively check if all children should be purged
         for child in self.children.values():
             #print(f"  4 this node {self.path} and iterated child: {child.path} ")
             if not child.should_optimise():
-                #print(f"  2 NO False child says it shouldn't purge: {str(child.path)} ")
+                print(f"  2 NO Not optimising this node : {str(child.path)} matched={self.matched} purge={self.purge}")
                 return False
             
         # If the node and all its children should be purged,
         # set purge to True and return True
         self.optimise = True
-        print(f"  Optimising this node {str(self.path)} which has hamming {self.ham_distance}")
+        print(f"  Optimising this node {str(self.path)} ")
         return True
     
     def optimise_tree(self):
