@@ -191,7 +191,7 @@ if __name__ == "__main__":
     
     #Concatenate the two HOPRS files
     # Open file1.txt and file2.txt in read mode, and file3.txt in write mode
-    with open(original_image + '.hoprs', 'r') as file1, open(new_image + '.hoprs', 'r') as file2, open(new_image_output_path + '.hoprs', 'w') as file3:
+    with open(original_image + '.hoprs', 'r') as file1, open(new_image + '.hoprs', 'r') as file2, open(os.path.basename(new_image_output_path) + '.hoprs', 'w') as file3:
         # Read and write the contents of file1 to file3
         contents_of_file1 = file1.read()
         file3.write(contents_of_file1)
