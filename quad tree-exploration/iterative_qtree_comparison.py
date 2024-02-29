@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 import sys
 import os
 from enum import Enum
@@ -138,7 +139,10 @@ def mark_as_removed(node):
     for child in node.children.values():
         mark_as_removed(child)
 
-def draw_comparison(image,list_pixel_counter, node1, node2, output_path, counter):
+
+#Image list - 0 is the red box green box
+# 1 is the blakc backdrop with squares of white to indicate red areas
+def draw_comparison(image_list,list_pixel_counter, node1, node2, output_path, counter):
     parts = node1.line.split(',')
     x0, y0, x1, y1 = map(int, parts[2:6])
     x = int(x0 + (x1 - x0) / 2)
@@ -147,17 +151,22 @@ def draw_comparison(image,list_pixel_counter, node1, node2, output_path, counter
     if (node1.removed):
         list_pixel_counter[0] += (x1-x0) * (y1-y0) #counter of the matched pixels. 
     color = (0, 255, 0) if node1.removed else (0, 0, 255)
-    cv2.rectangle(image, (x0, y0), (x1, y1), color, 4)
-    cv2.putText(image, str(node1.ham_distance), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1.5, color, 2)
+    cv2.rectangle(image_list[0], (x0, y0), (x1, y1), color, 4)
+    cv2.putText(image_list[0], str(node1.ham_distance), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1.5, color, 2)
     
-    cv2.rectangle(image, (0, 0), (4000, 120), (30, 30, 30), -1)  # Box behind text
+    #Draw onto image 1 to show an aread that has not matched
+    if node1.removed:
+        cv2.rectangle(image_list[1], (x0, y0), (x1, y1), (0,0,0), -1)
+    
+
+    cv2.rectangle(image_list[0], (0, 0), (4000, 120), (30, 30, 30), -1)  # Box behind text
     text = f"Path: {node1.path} Hash1: {node1.hash} vs Hash2: {node2.hash} Counter: {counter[0]} Removed: {node1.removed}"
-    cv2.putText(image, text, (30, 100), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 2)
+    cv2.putText(image_list[0], text, (30, 100), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 2)
     if not debug_mode and counter[0] != -1:  # Skip saving intermediate images unless in debug mode
         return
-    cv2.imwrite(f"{output_path}/comparison_{counter[0]:04}.jpg", image, [int(cv2.IMWRITE_JPEG_QUALITY), 50])
+    cv2.imwrite(f"{output_path}/comparison_{counter[0]:04}.jpg", image_list[0], [int(cv2.IMWRITE_JPEG_QUALITY), 50])
 
-def compare_and_output_images(image, list_pixel_counter, node1, node2, image_path, output_path, threshold, counter=[0], compare_depth=99):
+def compare_and_output_images(image_list, list_pixel_counter, node1, node2, image_path, output_path, threshold, counter=[0], compare_depth=99):
     if len(node1.path.split('-')) - 1 >= compare_depth:
         return
     
@@ -174,12 +183,12 @@ def compare_and_output_images(image, list_pixel_counter, node1, node2, image_pat
         else:
             node1.matched = Matched.NO
                 
-        draw_comparison(image, list_pixel_counter, node1, node2, output_path, counter)
+        draw_comparison(image_list, list_pixel_counter, node1, node2, output_path, counter)
         counter[0] += 1
     
     for key in node1.children:
         if key in node2.children:
-            compare_and_output_images(image, list_pixel_counter, node1.children[key], node2.children[key], image_path, output_path, threshold, counter, compare_depth)
+            compare_and_output_images(image_list, list_pixel_counter, node1.children[key], node2.children[key], image_path, output_path, threshold, counter, compare_depth)
 
 def main(original_image: str, original_image_qt: str, new_image: str, new_image_qt: str, new_image_output_path: str, threshold:int, compare_depth:int):
     
@@ -190,13 +199,23 @@ def main(original_image: str, original_image_qt: str, new_image: str, new_image_
     tree2 = parse_file_to_tree(new_image_qt)
     
     image = cv2.imread(original_image) #caution of rotated images that cv2 doesn't handle
+    
+    height_1, width_1 = image.shape[:2]
+    image_1 = np.zeros((height_1, width_1, 3), np.uint8)
+    image_1[:] = (255,255,255)
+    
     pixel_counter = 0
     list_pixel_counter = [pixel_counter]
-    compare_and_output_images(image, list_pixel_counter, tree1, tree2, original_image, new_image_output_path, threshold, [0], compare_depth)
+    list_images = [image, image_1]
+    
+    compare_and_output_images(list_images, list_pixel_counter, tree1, tree2, original_image, new_image_output_path, threshold, [0], compare_depth)
+    
+    cv2.imwrite(f"difference_mask.png", list_images[1], [int(cv2.IMWRITE_JPEG_QUALITY), 50])
+    
     
     # In non-debug mode, save the last image again to ensure the final state is preserved
     if not debug_mode:
-        draw_comparison(image, list_pixel_counter, tree1, tree2, new_image_output_path, [-1])  # Use a unique counter to indicate the last image
+        draw_comparison(list_images, list_pixel_counter, tree1, tree2, new_image_output_path, [-1])  # Use a unique counter to indicate the last image
 
     tree1.purge_tree()#remove all the nodes that are unmatched AND all children are also unmatched
     tree1.optimise_tree()#also create a tree that is a minimal node set. 
@@ -206,7 +225,6 @@ def main(original_image: str, original_image_qt: str, new_image: str, new_image_
 
     with open('tmp.optimised.qt', 'w') as f:
         tree1.print_optimised_tree(f) #write the newly purged tree to 
-
 
     height, width = image.shape[:2]
 
