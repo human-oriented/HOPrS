@@ -16,17 +16,18 @@
 #depth and path parts. 
 #the above is just debug to verify visually the comparisons.
 
-#Will create a file that is <filename>.hoprs which has the quadtree in 
+#Will create a file that is <filename>.qt which has the quadtree in 
+#Will create a file that is <filename>.hoprs which has a record of changes in (may not keep this long term) 
 
 echo "Starting to process pngs"
-for file in *.png;do python ../../encode_file_to_depth.py -i $file -d 10  && echo $file ; done 
+for file in *.png;do python ../../encode_file_to_depth.py -i $file -d 7  && echo $file ; done 
 
 echo "Starting to process jpgs"
-for file in *.jpg;do python ../../encode_file_to_depth.py -i $file -d 10  && echo $file ; done 
+for file in *.jpg;do python ../../encode_file_to_depth.py -i $file -d 7  && echo $file ; done 
 
 echo "Starting to process jpegs"
 
-for file in *.jpeg;do python ../../encode_file_to_depth.py -i $file -d  10 && echo $file ; done 
+for file in *.jpeg;do python ../../encode_file_to_depth.py -i $file -d 7 && echo $file ; done 
 
 echo Completed you now have the following .hoprs files
 ls -l *.hoprs
@@ -35,5 +36,5 @@ ls -l *.qt
 
 
 #From the output of this you can inspect each segment in different resolutions of the same file to be confident that 
-#the right segments have ben generated and that the perceptual hashes are reasonable
+#the right segments have been generated and that the perceptual hashes are reasonable
 
