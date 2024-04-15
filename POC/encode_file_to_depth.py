@@ -5,6 +5,7 @@ import numpy as np
 import json
 from datetime import datetime
 from PIL import Image
+import pdqhash
 import imagehash  # or any other library you prefer for perceptual hashing
 
 class QuadTreeNode:
@@ -195,4 +196,3 @@ if __name__ == "__main__":
     file_qt.close()
 
     print("Finishing up closing qt")
-
