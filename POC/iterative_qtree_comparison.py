@@ -135,7 +135,7 @@ def mark_as_removed(node):
     for child in node.children.values():
         mark_as_removed(child)
 
-def draw_comparison(image_list, list_pixel_counter, node1, node2, output_path, counter):
+def draw_comparison(image_list, list_pixel_counter, node1, node2, output_path, counter, threshold_cli, compare_depth_cli):
     parts = node1.line.split(',')
     x0, y0, x1, y1 = map(int, parts[2:6])
     x = int(x0 + (x1 - x0) / 2)
@@ -148,11 +148,12 @@ def draw_comparison(image_list, list_pixel_counter, node1, node2, output_path, c
     if node1.removed:
         cv2.rectangle(image_list[1], (x0, y0), (x1, y1), (0,0,0), -1)
     cv2.rectangle(image_list[0], (0, 0), (4000, 120), (30, 30, 30), -1)  # Box behind text
-    text = f"Path: {node1.path} Hash1: {node1.hash} vs Hash2: {node2.hash} Counter: {counter[0]} Removed: {node1.removed}"
+    text = f"threshold:{threshold_cli}  depth:{compare_depth_cli}  perceptual_alg:{node1.algorithm}"
+    #text = f"Path: {node1.path} Hash1: {node1.hash} vs Hash2: {node2.hash} Counter: {counter[0]} Removed: {node1.removed}"
     cv2.putText(image_list[0], text, (30, 100), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 2)
     if not debug_mode and counter[0] != -1:  # Skip saving intermediate images unless in debug mode
         return
-    cv2.imwrite(f"{output_path}/comparison_{counter[0]:04}.jpg", image_list[0], [int(cv2.IMWRITE_JPEG_QUALITY), 50])
+    cv2.imwrite(f"{output_path}/comparison_t{threshold}_d{compare_depth_cli}_{node1.algorithm}_{counter[0]:04}.jpg", image_list[0], [int(cv2.IMWRITE_JPEG_QUALITY), 50])
 
 def compare_and_output_images(image_list, list_pixel_counter, node1, node2, image_path, output_path, threshold, counter=[0], compare_depth=99):
     if len(node1.path.split('-')) - 1 >= compare_depth:
@@ -175,7 +176,7 @@ def compare_and_output_images(image_list, list_pixel_counter, node1, node2, imag
         else:
             node1.matched = Matched.NO
                 
-        draw_comparison(image_list, list_pixel_counter, node1, node2, output_path, counter)
+        draw_comparison(image_list, list_pixel_counter, node1, node2, output_path, counter, threshold, compare_depth)
         counter[0] += 1
     
     for key in node1.children:
@@ -189,7 +190,21 @@ def get_algorithm_name(node):
             return parts[8]
     return None
 
-# The rest of the code remains the same...
+def count_black_pixels(image):
+    # Convert the image to grayscale
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    
+    # Threshold the grayscale image to get binary image
+    _, binary_image = cv2.threshold(gray_image, 1, 255, cv2.THRESH_BINARY)
+    
+    # Invert the binary image so that black pixels are represented by 1
+    inverted_image = cv2.bitwise_not(binary_image)
+    
+    # Count the number of black pixels (pixels with value 1)
+    num_black_pixels = np.count_nonzero(inverted_image)
+    
+    return num_black_pixels
+
 
 def main(original_image: str, original_image_qt: str, new_image: str, new_image_qt: str, new_image_output_path: str, threshold:int, compare_depth:int):
     if not os.path.exists(new_image_output_path):
@@ -199,20 +214,23 @@ def main(original_image: str, original_image_qt: str, new_image: str, new_image_
     tree2 = parse_file_to_tree(new_image_qt)
     
     image = cv2.imread(original_image)
+    image_derivative = cv2.imread(new_image)
     height_1, width_1 = image.shape[:2]
     image_1 = np.zeros((height_1, width_1, 3), np.uint8)
     image_1[:] = (255,255,255)
     
     pixel_counter = 0
     list_pixel_counter = [pixel_counter]
-    list_images = [image, image_1]
+    list_images = [image_derivative, image_1]
     
     compare_and_output_images(list_images, list_pixel_counter, tree1, tree2, original_image, new_image_output_path, threshold, [0], compare_depth)
     
     cv2.imwrite(f"difference_mask.png", list_images[1], [int(cv2.IMWRITE_JPEG_QUALITY), 50])
     
+    unchanged_pixels = count_black_pixels(list_images[1])
+
     if not debug_mode:
-        draw_comparison(list_images, list_pixel_counter, tree1, tree2, new_image_output_path, [-1])  # Use a unique counter to indicate the last image
+        draw_comparison(list_images, list_pixel_counter, tree1, tree2, new_image_output_path, [-1],threshold, compare_depth)  # Use a unique counter to indicate the last image
 
     tree1.purge_tree()
     tree1.optimise_tree()
@@ -225,8 +243,8 @@ def main(original_image: str, original_image_qt: str, new_image: str, new_image_
 
     height, width = image.shape[:2]
     image_pixels = width * height
-    proportion = list_pixel_counter[0]/image_pixels
-    print (f"Matched pixels {list_pixel_counter[0]} out of {image_pixels} which is {proportion:.2%}")
+    proportion = unchanged_pixels/image_pixels
+    print (f"Matched pixels {unchanged_pixels} out of {image_pixels} which is {proportion:.2%}")
 
 if __name__ == "__main__":
     if len(sys.argv) != 5 :
