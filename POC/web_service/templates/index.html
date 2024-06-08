@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Encoder</title>
+</head>
+<body>
+    <h1>Image Encoder</h1>
+    <form id="upload-form" action="/upload" method="post" enctype="multipart/form-data">
+        <label for="file">Choose image file:</label>
+        <input type="file" id="file" name="file" required><br><br>
+
+        <label for="depth">Quad Tree Depth:</label>
+        <input type="number" id="depth" name="depth" value="5" required><br><br>
+
+        <label for="algorithm">Hash Algorithm:</label>
+        <select id="algorithm" name="algorithm">
+            <option value="pdq">PDQ</option>
+            <option value="phash">pHash</option>
+            <option value="ahash">aHash</option>
+            <option value="dhash">dHash</option>
+        </select><br><br>
+
+        <label for="resize">Resize (width,height):</label>
+        <input type="text" id="resize" name="resize"><br><br>
+
+        <label for="crop">Crop (x0,y0,x1,y1):</label>
+        <input type="text" id="crop" name="crop"><br><br>
+
+        <label for="note">Note:</label>
+        <input type="text" id="note" name="note"><br><br>
+
+        <button type="submit">Upload and Encode</button>
+    </form>
+
+    <p>Once you have processed your file have fun modifying it and then go to <a href="compare">Compare functionality</a>
+    and pass in the modified image and the .qt file that you've just generated</p>
+
+
+    <script>
+        document.getElementById('upload-form').onsubmit = function() {
+            const fileInput = document.getElementById('file');
+            if (fileInput.files.length === 0) {
+                alert("Please choose a file to upload.");
+                return false;
+            }
+            return true;
+        }
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comparison Result</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            display: none;
+        }
+        .active {
+            display: block;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .stats {
+            list-style: none;
+            padding: 0;
+        }
+        .stats li {
+            margin: 5px 0;
+        }
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .buttons {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .buttons button {
+            margin: 0 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Comparison Result</h1>
+        <div class="buttons">
+            <button onclick="showImage('highlight')">Highlighted Image</button>
+            <button onclick="showImage('comparison')">Comparison Image</button>
+            <button onclick="showImage('new')">New Image</button>
+            <button onclick="showImage('difference')">Difference Mask</button>
+        </div>
+        <h2>Images</h2>
+        <img id="highlight" src="{{ highlight_image }}" alt="Highlighted Image" class="active">
+        <img id="comparison" src="{{ comparison_image }}" alt="Comparison Image">
+        <img id="new" src="{{ new_image }}" alt="New Image">
+        <img id="difference" src="{{ output_image }}" alt="Difference Mask">
+        <h2>Statistics</h2>
+        <ul class="stats">
+            <li>Matched Pixels: {{ stats.matched_pixels }}</li>
+            <li>Total Pixels: {{ stats.total_pixels }}</li>
+            <li>Proportion: {{ stats.proportion }}</li>
+        </ul>
+        <a href="/" class="back-link">Go Back</a>
+    </div>
+    <script>
+        function showImage(id) {
+            const images = document.querySelectorAll('img');
+            images.forEach(image => {
+                image.classList.remove('active');
+            });
+            document.getElementById(id).classList.add('active');
+        }
+    </script>
+</body>
+</html>
