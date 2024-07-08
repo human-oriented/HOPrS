@@ -1,19 +1,19 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HOPrS Image Comparison</title>
+    <title>HOPrS DB Search</title>
 </head>
 <body>
-    <h1>Image Comparison</h1>
-    <p>This page will allow comparison between a new (found) image and a known quadtree as file</p>
-    <form id="compare-form" action="/compare" method="post" enctype="multipart/form-data">
-        <label for="original_image_qt">Choose original image QT file:</label>
-        <input type="file" id="original_image_qt" name="original_image_qt" required><br><br>
+    <h1>Search in DB</h1>
+    <p>This page will allow you to find an image in a database and show nearest matches. </p>
+    <form id="compare-form" action="/search" method="post" enctype="multipart/form-data">
+    
 
-        <label for="new_image">Choose new image file:</label>
+        <label for="new_image">Choose new image file to search for:</label>
         <input type="file" id="new_image" name="new_image" required><br><br>
 
         <label for="threshold">Threshold:</label>
@@ -22,7 +22,7 @@
         <label for="compare_depth">Compare Depth:</label>
         <input type="number" id="compare_depth" name="compare_depth" value="5" required><br><br>
 
-        <button type="submit">Compare</button>
+        <button type="submit">Search</button>
     </form>
     <table border=1>
         <tr>

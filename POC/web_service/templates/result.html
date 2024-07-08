@@ -1,9 +1,10 @@
 <!doctype html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comparison Result</title>
+    <title>HOPrS Comparison Result</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -46,6 +47,16 @@
             font-size: 16px;
             cursor: pointer;
         }
+        .file-list {
+            margin-top: 20px;
+        }
+        .file-list ul {
+            list-style: none;
+            padding: 0;
+        }
+        .file-list li {
+            margin: 5px 0;
+        }
     </style>
 </head>
 <body>
@@ -61,7 +72,7 @@
         <img id="highlight" src="{{ highlight_image }}" alt="Highlighted Image" class="active">
         <img id="comparison" src="{{ comparison_image }}" alt="Comparison Image">
         <img id="new" src="{{ new_image }}" alt="New Image">
-        <img id="difference" src="{{ output_image }}" alt="Difference Mask">
+        <img id="difference" src="{{ difference_mask }}" alt="Difference Mask">
         <h2>Statistics</h2>
         <ul class="stats">
             <li>Matched Pixels: {{ stats.matched_pixels }}</li>
@@ -69,6 +80,14 @@
             <li>Proportion: {{ stats.proportion }}</li>
         </ul>
         <a href="/" class="back-link">Go Back</a>
+        <div class="file-list">
+            <h2>Output Files</h2>
+            <ul>
+                {% for file in files %}
+                <li>{{ file }}</li>
+                {% endfor %}
+            </ul>
+        </div>
     </div>
     <script>
         function showImage(id) {
@@ -79,5 +98,13 @@
             document.getElementById(id).classList.add('active');
         }
     </script>
+    <table border=1>
+        <tr>
+            <td><a href="/">Encode files</a></td>
+            <td><a href="compare">Compare </a></td>
+            <td><a href="search">DB Search </a></td>
+            <td><a href="quadtrees">DB QuadTree management</a></td>
+        </tr>
+    </table>
 </body>
 </html>

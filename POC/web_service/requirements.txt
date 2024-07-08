@@ -1,0 +1,13 @@
+celery
+google-cloud-logging
+uuid
+python-dotenv
+Flask
+Werkzeug
+google-cloud-storage
+opencv-python-headless
+pillow
+pdqhash
+imagehash
+numpy<2
+astrapy
