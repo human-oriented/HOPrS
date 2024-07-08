@@ -1,9 +1,10 @@
 <!doctype html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Encoder</title>
+    <title>HOPrS Image Encoder</title>
 </head>
 <body>
     <h1>Image Encoder</h1>
@@ -34,9 +35,14 @@
         <button type="submit">Upload and Encode</button>
     </form>
 
-    <p>Once you have processed your file have fun modifying it and then go to <a href="compare">Compare functionality</a>
-    and pass in the modified image and the .qt file that you've just generated</p>
-
+<table border=1>
+    <tr>
+        <td><a href="/">Encode files</a></td>
+        <td><a href="compare">Compare </a></td>
+        <td><a href="search">DB Search </a></td>
+        <td><a href="quadtrees">DB QuadTree management</a></td>
+    </tr>
+</table>
 
     <script>
         document.getElementById('upload-form').onsubmit = function() {
