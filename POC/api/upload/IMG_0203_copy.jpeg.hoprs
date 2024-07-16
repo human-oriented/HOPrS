@@ -1,0 +1,16 @@
+{
+    "When": "2024-07-16 15:45:41Z",
+    "What": "ENCODED",
+    "orig_width": "0",
+    "orig_height": "0",
+    "x0": "0",
+    "y0": "0",
+    "x1": "0",
+    "y1": "0",
+    "Format": "PNG",
+    "Image_file": "./upload/IMG_0203_copy.jpeg",
+    "QT_file": "./upload/IMG_0203_copy.jpeg.qt",
+    "Encoded_depth": "5",
+    "Perceptual_algorithm": "PDQ",
+    "Comment": "Need a meaningful comment in here at some point"
+}

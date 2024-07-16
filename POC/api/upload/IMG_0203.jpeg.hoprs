@@ -1,0 +1,10 @@
+{
+    "When": "2024-07-15 10:25:21Z",
+    "What": "ENCODED",
+    "Format": "PNG",
+    "Image_file": "./upload/IMG_0203.jpeg",
+    "QT_file": "./upload/IMG_0203.jpeg.qt",
+    "Encoded_depth": "5",
+    "Perceptual_algorithm": "PDQ",
+    "Comment": "Generated for comparison"
+}
