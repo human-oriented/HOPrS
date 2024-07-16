@@ -13,7 +13,7 @@ export default function Index() {
     <div className="text-2xl font-bold p-5 container m-auto text-center items-center flex flex-col">
       <img src="/hoprs-logo.png" width={500} />
       <Link to="/compare">Compare</Link>
-      <Link to="/compare">Encode</Link>
+      <Link to="/encode">Encode</Link>
     </div>
   );
 }
