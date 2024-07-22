@@ -29,8 +29,8 @@
         "env.bak{,/**}",
         "venv.bak{,/**}",
         "myenv{,/**}",
-        ".vscode{,/**}"
+        ".vscode{,/**}",
+        "node_modules{,/**}"
     ],
-    "appService.defaultWebAppToDeploy": "/subscriptions/e01d56bf-cf3c-47d2-ba88-0afb75217a85/resourceGroups/HOPrS_Web/providers/Microsoft.Web/sites/hoprs-api",
-    "appService.deploySubpath": "POC/api"
+    "appService.defaultWebAppToDeploy": "None",
 }

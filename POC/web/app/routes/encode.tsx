@@ -3,11 +3,12 @@ import { Form, Link, useFetcher } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import * as Icon from 'react-feather';
 import { jsonWithSuccess, jsonWithError } from "remix-toast";
+import { LoadingButton } from "~/components/LoadingButton";
 
 export const meta: MetaFunction = () => {
   return [
     { title: "HOPrS" },
-    { name: "description", content: "HOPrS" },
+    { name: "description", content: "HOPrS - Human oriented proof standard" },
   ];
 };
 
@@ -22,7 +23,7 @@ export const action: ActionFunction = async ({ request }) => {
       return json({ error: 'File is required' }, { status: 400 });
     }
   
-    const externalApiUrl = 'http://127.0.0.1:5000/hoprs/encode'; // Replace with your external API URL
+    const externalApiUrl = `${process.env.API_URL}/hoprs/encode`; // Replace with your external API URL
     const externalFormData = new FormData();
     externalFormData.append('file', file, file.name);
     externalFormData.append('depth', depth);
@@ -53,6 +54,7 @@ export default function Encode() {
     const [depth, setDepth] = useState(5)
     const [image, setImage] = useState('')
     const [download, setDownload] = useState('')
+    const [loading, setLoading] = useState(false)
 
 useEffect(() => {
     if (fetcher?.data?.blob) {
@@ -65,22 +67,19 @@ useEffect(() => {
     }
 }, [fetcher?.data])
 
+useEffect(() => {
+    if (fetcher?.state != "idle") {
+        setLoading(true)
+    } else {
+        setLoading(false)
+    }
+}, [fetcher?.state])
+
   return (
     <>
-    <header className="flex flex-row items-center justify-between w-full shadow-md px-5 absolute top-0 bg-white">
-        <img src="/hoprs-logo.png" width={400} />
-        <div className="flex flex-row items-center">
-            <div className="flex flex-row items-center mx-3 font-bold border-r border-black pr-3">
-                <span className="text-xs mr-1">Test User</span>
-                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-700 text-white">
-                    <Icon.User size={18} />
-                </div>
-            </div>
-            <Icon.Menu size={30} />
-        </div>
-    </header>
-    <div className="p-5 container m-auto text-center items-center justify-center flex flex-col flex-stretch h-screen pt-20">
-      <div className="intro text-gray-500 w-2/3 mx-auto mb-5 text-sm">
+    
+    <div className="p-5 container m-auto text-center items-center justify-center flex flex-col flex-stretch min-h-screen pt-20">
+      <div className="intro text-gray-500 lg:w-2/3 mx-auto mb-5 text-sm">
         <h1 className="font-bold text-3xl text-black">Image Encoder</h1>
         <p className="my-3">This tool will encode any image and generate quad tree file which can be used for image comparison.</p>
         <p>To compare and image with the generated quad tree file you can use our <Link className="underline" to="/compare">image comparison tool</Link>.</p>
@@ -89,7 +88,7 @@ useEffect(() => {
         <div className="files flex flex-row items-center">
             <div className="w-1/2 p-5">
                 <div className="flex items-center justify-center w-full">
-                    <label htmlFor="file" className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600">
+                    <label htmlFor="file" className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600 p-3">
                         <div className="flex flex-col items-center justify-center pt-5 pb-6 text-black w-full">
                             <Icon.Image size={40} />
                             {image ?
@@ -147,11 +146,11 @@ useEffect(() => {
             </div>
         </div>
         <div className="buttons my-10">
-            <button className="bg-black hover:opacity-90 text-white font-bold px-10 py-4 rounded-tl-2xl rounded-br-2xl  min-w-[300px] mr-2">Encode Image</button>
+            <LoadingButton loading={loading} width={300} className="bg-black inline-block mb-5">Encode Image</LoadingButton>
             {fetcher.data && fetcher.data.success ? 
-                <a className="bg-green-500 hover:opacity-90 text-white font-bold px-10 py-[18px] rounded-tl-2xl rounded-br-2xl  min-w-[300px] ml-2" href={download}>Download Quad tree file</a>
+                <a className="bg-green-500 mt-5 inline-block hover:opacity-90 text-white font-bold px-10 py-[18px] rounded-tl-2xl rounded-br-2xl  min-w-[300px] lg:ml-2" href={download}>Download Quad tree file</a>
             :
-                <a className="bg-gray-300 cursor-not-allowed text-white font-bold px-10 py-[18px] rounded-tl-2xl rounded-br-2xl min-w-[300px] ml-2" href={null}>Download Quad tree file</a>
+                <a className="bg-gray-300 mt-5 inline-block cursor-not-allowed text-white font-bold px-10 py-[18px] rounded-tl-2xl rounded-br-2xl min-w-[300px] lg:ml-2" href={null}>Download Quad tree file</a>
             }
         </div>
         
