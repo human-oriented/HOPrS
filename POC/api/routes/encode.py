@@ -1,7 +1,7 @@
 import cv2
 import json
 from datetime import datetime, timezone
-from utils import QuadTree
+from utils.utils import QuadTree
 
 def encode_image(filepath, depth, algorithm, resize, crop, note):
     image = cv2.imread(filepath)

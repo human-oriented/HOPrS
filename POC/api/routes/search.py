@@ -4,7 +4,7 @@ import numpy as np
 from flask import request, render_template, url_for, current_app, jsonify
 from werkzeug.utils import secure_filename
 from datetime import datetime, timezone
-from utils import (
+from utils.utils import (
     QuadTree, mark_as_removed,
     compare_and_output_images, count_black_pixels, create_red_overlay,
     Matched, hex_to_binary_vector, collection,retrieve_quadtree,

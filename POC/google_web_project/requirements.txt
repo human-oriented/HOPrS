@@ -1,8 +1,0 @@
-Flask
-Werkzeug
-google-cloud-storage
-opencv-python-headless
-pillow
-pdqhash
-imagehash
-
