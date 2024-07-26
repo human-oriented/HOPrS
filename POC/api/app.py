@@ -6,6 +6,7 @@ from werkzeug.utils import secure_filename
 from parsers.parsers import encode_parser, compare_parser, search_parser
 from routes.compare import compare_image
 from routes.encode import encode_image
+from routes.search import search_images
 
 app = Flask(__name__)
 upload_folder = './upload'
@@ -20,13 +21,26 @@ if not os.path.exists(upload_folder):
 if not os.path.exists(output_folder):
     os.makedirs(output_folder)
 
-api = Api(app, version='1.0', title='HOPrS', description='Open standard for content authentication')
+api = Api(app, version='0.0.2', title='HOPrS', description='Open standard for content authentication')
 ns = api.namespace('hoprs', description='Human oriented proof standard')
 
+# Serves files from output folder
 @app.route('/output/<path:folder>/<path:filename>')
 def get_file(folder, filename):
-    return send_from_directory(os.path.join(app.config['OUTPUT_FOLDER'], folder), filename)
+    if folder is None or folder == "":
+        return send_from_directory(app.config['OUTPUT_FOLDER'], filename)
+    else:
+        return send_from_directory(os.path.join(app.config['OUTPUT_FOLDER'], folder), filename)
 
+# Returns version number
+@ns.route('/version')
+@ns.response(404, 'Task not found')
+class Version(Resource):
+    def get(self):
+        return api.version
+
+# Encode a file
+# Return - a quad tree file to download 
 @ns.route('/encode')
 class Encode(Resource):
     @api.expect(encode_parser)
@@ -59,6 +73,8 @@ class Encode(Resource):
         except Exception as e:
             return str(e), 500
 
+# Compares an uploaded image to a quad tree file
+# Returns json of images of similarity and stats
 @ns.route('/compare')
 @ns.response(404, 'Task not found')
 class Compare(Resource):
@@ -94,6 +110,8 @@ class Compare(Resource):
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
+# Searches if there is a particular image in our database
+# Returns closest matches if any
 @ns.route('/search')
 @ns.response(404, 'Task not found')
 class Search(Resource):
@@ -106,7 +124,8 @@ class Search(Resource):
             return jsonify({"error": "No selected file"}), 400
         
         try:
-            return
+            result = search_images(image)
+            return result
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
