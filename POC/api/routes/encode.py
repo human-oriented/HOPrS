@@ -1,12 +1,20 @@
+import os
 import cv2
 import json
 from datetime import datetime, timezone
-from utils.utils import QuadTree
+from utils.utils import QuadTree, convert_heic
 
-def encode_image(filepath, depth, algorithm, resize, crop, note):
-    image = cv2.imread(filepath)
+def encode_image(filepath, depth, algorithm, resize, crop, note, file):
+    root, ext = os.path.splitext(file.filename.lower())
+    image = None
+    if ext == '.heic':
+        image_array = convert_heic(file)
+        image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+    else: 
+        image = cv2.imread(filepath)
+    
     if image is None:
-        raise ValueError("Error opening image. Please check the file.")
+            raise ValueError("Error opening image. Please check the file.")
     
     filename_dot_hoprs = filepath + ".hoprs"
     filename_dot_qt = filepath + ".qt"

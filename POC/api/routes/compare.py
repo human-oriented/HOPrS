@@ -8,13 +8,13 @@ import cv2
 from utils.utils import (
     QuadTree, draw_comparison,
     compare_and_output_images, count_black_pixels, create_red_overlay,
-    parse_file_to_tree
+    parse_file_to_tree, convert_heic
 )
 
 def compare_image(original_image, original_image_qt_filepath, new_image_filepath, new_image_filename, new_image_qt_filepath, threshold, compare_depth, output_folder):
     image = cv2.imread(new_image_filepath)
     if image is None:
-        return jsonify({"error": "Error opening new image. Please check the file."}), 400
+        return "Error opening new image. Please check the file.", 400
 
     image_hoprs = new_image_filepath + ".hoprs"
     with open(image_hoprs, "w") as file_hoprs:

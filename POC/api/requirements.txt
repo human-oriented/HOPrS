@@ -32,8 +32,10 @@ opencv-python-headless==4.10.0.84
 packaging==24.1
 pdqhash==0.2.5
 pillow==10.4.0
+pillow_heif==0.18.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
+python-magic==0.4.27
 pytz==2024.1
 PyWavelets==1.6.0
 referencing==0.35.1

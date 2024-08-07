@@ -1,19 +1,31 @@
-from flask import current_app
+from flask import current_app, send_file
 import os
 import cv2
 import csv
 import io
 from io import StringIO
 import numpy as np
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
+import pillow_heif
 from enum import Enum
 import imagehash
 import pdqhash
+import magic
 from astrapy.client import DataAPIClient
 from dotenv import load_dotenv
+import tempfile
 
 
 load_dotenv()
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'heic'}
+MAGIC_NUMBERS = {
+    'png': 'image/png',
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'gif': 'image/gif',
+    'heic': 'image/heic'
+}
 
 # Initialize the client and get a "Database" object
 client = DataAPIClient(os.environ["ASTRA_DB_APPLICATION_TOKEN"])
@@ -500,3 +512,94 @@ def sort_csv_by_first_field(csv_data):
     
     # Return the sorted CSV data as a string
     return output_file.getvalue()
+
+def allowed_image(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def validate_image(file):
+    try:
+        # Check if the file's extension is allowed
+        if not allowed_image(file.filename):
+            return False, "Unsupported file extension"
+
+        # Use python-magic to check the file's magic number
+        file_mime_type = magic.from_buffer(file.read(2048), mime=True)
+        file.seek(0)  # Reset file pointer after reading
+        
+        # Get the expected MIME type based on the file extension
+        expected_mime_type = MAGIC_NUMBERS.get(file.filename.rsplit('.', 1)[1].lower())
+        if file_mime_type != expected_mime_type:
+            return False, f"Mismatched MIME type: expected {expected_mime_type}, got {file_mime_type}"
+        
+        # Open the image file using Pillow to check format
+        # try:
+        #     img = Image.open(file)
+        #     img.verify()  # Verify that the image file is not corrupted
+        #     file.seek(0)  # Reset file pointer for further operations
+        # except UnidentifiedImageError:
+        #     return False, "The file is not a valid image or is corrupted"
+        
+        # Image is valid
+        return True, "Image is valid"
+    except Exception as e:
+        return False, str(e)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'qt'}
+    
+def validate_quadtree(file):
+    try:
+        # Check if the file's extension is allowed
+        if not allowed_file(file.filename):
+            return False, "Unsupported file extension"
+
+        # Use python-magic to check the file's magic number
+        file_mime_type = magic.from_buffer(file.read(2048), mime=True)
+        file.seek(0)  # Reset file pointer after reading
+        
+        # Get the expected MIME type based on the file extension
+        allowed_mime_types = ['text/csv', 'application/csv']
+        if file_mime_type not in allowed_mime_types:
+            return False, f"Mismatched MIME type: expected {allowed_mime_types}, got {file_mime_type}"
+        
+        # Image is valid
+        return True, "File is valid"
+    except Exception as e:
+        return False, str(e)
+    
+def convert_heic(file):
+    try:
+            # Read HEIC file from the request
+            current_app.logger.debug(f"Convert heic to png - {file.filename}")
+            heif_file = pillow_heif.open_heif(file)
+            
+            # Convert to Pillow Image
+            image = Image.frombytes(
+                heif_file.mode,
+                heif_file.size,
+                heif_file.data,
+                "raw",
+                heif_file.mode,
+                heif_file.stride
+            )
+            current_app.logger.debug(f"Convert heic to png - pillow image created")
+            # Save image to an in-memory bytes buffer in PNG format
+            image_buffer = io.BytesIO()
+            image.save(image_buffer, format='PNG')
+            image_buffer.seek(0)  # Rewind the buffer to the beginning
+            current_app.logger.debug(f"Convert heic to png - saved to buffer")
+            # Convert image buffer to a numpy array and then decode with OpenCV
+            image_array = np.frombuffer(image_buffer.getvalue(), dtype=np.uint8)
+            return image_array
+            # image_cv = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+            # current_app.logger.debug(f"Convert heic to png - image decoded")
+
+            # if image_cv is not None:
+            #     current_app.logger.debug(f"image cv not null")
+            #     return image_cv
+            # else:
+            #     raise ValueError("OpenCV could not read the image")
+            
+    except Exception as e:
+        raise ValueError("Could not convert heic to png")
+    
