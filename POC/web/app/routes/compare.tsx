@@ -35,8 +35,8 @@ export const action: ActionFunction = async ({ request }) => {
     const externalFormData = new FormData();
     externalFormData.append('original_image_qt', file, file.name);
     externalFormData.append('new_image', image, image.name)
-    externalFormData.append('depth', depth);
-    externalFormData.append('threshold', threshold);
+    externalFormData.append('compare_depth', depth?.toString() ?? '5');
+    externalFormData.append('threshold', threshold?.toString() ?? '10');
     
     try {
       const response = await fetch(externalApiUrl, {

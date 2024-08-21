@@ -545,7 +545,7 @@ def validate_image(file):
         return False, str(e)
 
 def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'qt'}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'qt', 'csv'}
     
 def validate_quadtree(file):
     try:
