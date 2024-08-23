@@ -189,12 +189,12 @@ export default function Compare() {
                       })} 
                 />
                 <div className="mt-5 text-left text-gray-400">
-                    <p className="my-2 py-2 border-gray-200 border-b flex flex-row justify-between">Quad tree file: <span className="text-black ml-2">{imageQT.name}</span></p>
-                    <p className="my-2 py-2 border-gray-200 border-b flex flex-row justify-between">Image: <span className="text-black ml-2">{image.name}</span></p>
+                    <p className="my-2 py-2 border-gray-200 border-b flex flex-row justify-between">Quad tree file: <span className="text-black ml-2">{imageQT?.name}</span></p>
+                    <p className="my-2 py-2 border-gray-200 border-b flex flex-row justify-between">Image: <span className="text-black ml-2">{image?.name}</span></p>
                     <p className="my-2 py-2 border-gray-200 border-b flex flex-row justify-between">Threshold: <span className="text-black ml-2">{threshold}</span></p>
                     <p className="my-2 py-2 border-gray-200 border-b flex flex-row justify-between">Depth: <span className="text-black ml-2">{depth}</span></p>
-                    <p className="my-2 py-2 border-gray-200 border-b flex flex-row justify-between">Total image pixels: <span className="text-black ml-2">{fetcher.data.data.stats.total_pixels}</span></p>
-                    <p className="my-2 py-2 border-gray-200 border-b flex flex-row justify-between">Total matched pixels: <span className="text-black ml-2">{fetcher.data.data.stats.matched_pixels}</span></p>
+                    <p className="my-2 py-2 border-gray-200 border-b flex flex-row justify-between">Total image pixels: <span className="text-black ml-2">{fetcher?.data?.data?.stats?.total_pixels}</span></p>
+                    <p className="my-2 py-2 border-gray-200 border-b flex flex-row justify-between">Total matched pixels: <span className="text-black ml-2">{fetcher?.data?.data?.stats?.matched_pixels}</span></p>
                     <p className="my-2 py-2 flex flex-row justify-between">Perceptual algorithm: <span className="text-black ml-2">PDQ</span></p>
                 </div>
             </div>
