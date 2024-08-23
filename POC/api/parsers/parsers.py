@@ -15,5 +15,9 @@ compare_parser.add_argument('new_image', location='files', type=FileStorage, req
 compare_parser.add_argument('threshold', type=int, required=True, help='Threshold for comparison', default=10)
 compare_parser.add_argument('compare_depth', type=int, required=True, help='Depth for comparison', default=5)
 
+download_parser = reqparse.RequestParser()
+download_parser.add_argument('qt_ref', type=str, required=True, help='qt_ref to find in database and reassemble into a CSV QT')
+
+
 search_parser = reqparse.RequestParser()
 search_parser.add_argument('image', location='files', type=FileStorage, required=True, help='Image to search')

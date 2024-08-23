@@ -4,10 +4,11 @@ import numpy as np
 from flask import Flask, request, current_app, send_file, jsonify, send_from_directory
 from flask_restx import Api, Resource
 from werkzeug.utils import secure_filename
-from parsers.parsers import encode_parser, compare_parser, search_parser
+from parsers.parsers import encode_parser, compare_parser, search_parser, download_parser
 from routes.compare import compare_image
 from routes.encode import encode_image
 from routes.search import search_images
+from routes.download import download_qt
 from utils.utils import (validate_image, validate_quadtree, convert_heic)
 from PIL import Image
 
@@ -30,6 +31,16 @@ if not os.path.exists(output_folder):
 
 api = Api(app, version='0.0.3', title='HOPrS', description='Open standard for content authentication')
 ns = api.namespace('hoprs', description='Human oriented proof standard')
+
+@ns.route('/download/')
+class Download(Resource):
+    @api.expect(download_parser)
+    def post(self):
+        args = download_parser.parse_args()
+        qt_ref = args['qt_ref']
+        if (qt_ref == ''):
+            return "No qt_ref specified", 400
+        return download_qt(qt_ref)
 
 # Serves files from output folder
 @app.route('/output/<path:folder>/<path:filename>')
