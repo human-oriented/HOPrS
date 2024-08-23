@@ -115,6 +115,7 @@ class QuadTreeNode:
     def is_leaf_node(self):
         return len(self.children) == 0
 
+#TODO understand if level is used elsewhere, prefer counting in path each time. 
     def store_in_astra_db(self, path, level, unique_qt_reference, jsonrepresentation):
         vector = hex_to_binary_vector(self.phash)
         if len(vector) != 256:
@@ -123,7 +124,7 @@ class QuadTreeNode:
             "_id": unique_qt_reference + ' ' + path,
             'qt_ref': unique_qt_reference,
             'path': path,
-            'level': level,
+            'level': path.count('-'),
             'x0': self.box[0],
             'y0': self.box[1],
             'x1': self.box[2],
@@ -261,19 +262,19 @@ class QuadTree:
         return node
 
     def append_json_representation(self, node=None, level=0, path=''):
-        current_app.logger.debug(f"DEPRECATED append_json_representation called {path}")
+        current_app.logger.debug(f"append_json_representation called {path}")
         if node is None:
             node = self.root
 
         node.store_in_astra_db(path, level, self.unique_qt_reference, self.jsonrepresentation)
         
         for new_path, child in node.children.items():
-            self.append_json_representation(child, level + 1, new_path)
+            self.append_json_representation(child, child.path.count('-'), child.path)
 
     def write_to_astra_db(self, node:QuadTreeNode=None, level=0, path=''):
-        current_app.logger.debug(f"DEPRECATED write_to_astra_db called {path}")
+        current_app.logger.debug(f"write_to_astra_db called {path}")
 
-        self.append_json_representation(node, level, path)
+        self.append_json_representation(node, path.count('-'), path)
         current_app.logger.debug(f"len of jsonrepresentation is {len(self.jsonrepresentation)}")
         
         validate_vectors(self.jsonrepresentation)
