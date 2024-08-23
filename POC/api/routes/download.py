@@ -23,29 +23,35 @@ def download_qt(qt_ref:str):
 
 
         counter=0
-        data = []
-        for document in results:            
-            #TODO WRONG ORDER SORT THIS OUT
-            data.append({
-                "id": document["_id"],
-                "qt_ref": document["qt_ref"],
-                "path": document["path"],
-                "level": document["level"],
-                "x0": document["x0"],
-                "y0": document["y0"],
-                "x1": document["x1"],
-                "y1": document["y1"],
-                "width": document["width"],
-                "height": document["height"],
-                "hash_algorithm": document["hash_algorithm"],
-                "perceptual_hash_hex": document["perceptual_hash_hex"],
-            })
+        csv = ""
+        for document in results: 
+            
+
+            csv += f"{document['path']},{document['path'].count('-')},{document['x0']},{document['y0']},{document['x1']},{document['y1']},{document['width']},{document['height']},{document['hash_algorithm']},{document['perceptual_hash_hex']}\n"       
             print(f"retrieved {document['qt_ref']} {document['path']}")
             counter+=1
-            
-            
-        #TODO Wrangle data into a CSV
+                        
+        
         print(f"returned {counter} records") 
+
         if (counter == 0):
             return "qt not found", 404
-        return data, 200
+
+        output_folder = current_app.config['OUTPUT_FOLDER']
+        print("output_folder is " + output_folder)
+        csv_file = f"csv_{qt_ref}.csv.qt"
+
+        csv_path = os.path.join(output_folder, csv_file)
+        print(f"Saving file to {csv_file}")
+        
+        try:
+            with open(csv_path, 'w') as file:
+                file.write(csv)
+            print(f"Have saved file to {csv_file}")                                     
+        except:
+            return "Server issue writing to file", 500                         
+        
+        print("os.path.basename(csv_file) : " + os.path.basename(csv_file))
+        print("os.path.basename(output_folder) : " + os.path.basename(output_folder))
+        
+        return {"csv_qt_file": url_for('get_file', folder=os.path.basename(output_folder), filename=os.path.basename(csv_file), _external=True)},200
