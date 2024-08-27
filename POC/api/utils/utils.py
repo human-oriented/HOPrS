@@ -128,28 +128,6 @@ class QuadTreeNode:
     def is_leaf_node(self):
         return len(self.children) == 0
 
-#TODO understand if level is used elsewhere, prefer counting in path each time. 
-#TODO IS THIS USED?!
-    def DEAD_store_in_astra_db(self, path, level, image_id:uuid, jsonrepresentation):
-        vector = hex_to_binary_vector(self.phash)
-        if len(vector) != 256:
-            print(f"Error: Vector length is {len(vector)}, expected 256. Path: {path}, Phash: {self.phash}")
-        jsonrepresentation.append({
-            "_id": image_id + ' ' + path,
-            'image_id': image_id,
-            'path': path,
-            'level': path.count('-'),
-            'x0': self.box[0],
-            'y0': self.box[1],
-            'x1': self.box[2],
-            'y1': self.box[3],
-            'width': self.box[2] - self.box[0],
-            'height': self.box[3] - self.box[1],
-            'hash_algorithm': self.hash_algorithm,
-            'perceptual_hash_hex': self.phash,
-            '$vector': vector
-        })
-
     def add_child(self, path_segment, child_node):
         print(f"add_child called {path_segment} {child_node.path}")
         self.children[path_segment] = child_node
@@ -391,7 +369,7 @@ def parse_string_to_tree(csv_str):
     for line in string_io:
         parts = line.strip().split(',')
         path_segments = parts[0].strip().strip('-').split('-') #Lose whitespace at end and trailing dash
-        current_app.logger.debug(f"parse_string_to_tree path_segments should not have trailing - : {path_segments}")
+        #current_app.logger.debug(f"parse_string_to_tree path_segments should not have trailing - : {path_segments}")
         current = root
         for segment in path_segments:
             segment+= '-'
@@ -492,19 +470,15 @@ def compare_and_output_images(
         counter[0] += 1
     current_app.logger.debug(f" -2b compare_and_output_images counter {counter[0]}")
     
-    for key in node1.children:
-        current_app.logger.debug(f" -3 compare_and_output_images key:{key} len node1: {len(node1.children)}  len node2:{len(node2.children)}____ ")
+    for child in node1.children:
+        current_app.logger.debug(f" -3 compare_and_output_images key:{child} len node1: {len(node1.children)}  len node2:{len(node2.children)}____ ")
         
-        for k1 in node1.children:
-            current_app.logger.debug(f"  -3. key in node1 is {k1}___")    
-        for k2 in node2.children:
-            current_app.logger.debug(f"  -3. key in node2 is {k2}___")
         
-        if key in node2.children:
-            current_app.logger.debug(f"recursing down from {node1.path} to {node1.children[key].path} and {node2.children[key].path}")
-            compare_and_output_images(image_list, list_pixel_counter, node1.children[key], node2.children[key], image_path, output_path, threshold, counter, compare_depth)
+        if child in node2.children:
+            current_app.logger.debug(f"recursing down from {node1.path} to {node1.children[child].path} and {node2.children[child].path}")
+            compare_and_output_images(image_list, list_pixel_counter, node1.children[child], node2.children[child], image_path, output_path, threshold, counter, compare_depth)
         else:
-            current_app.logger.debug(f"key {key} not found in node2 children, possibly hit bottom of tree or tree is incorrect")
+            current_app.logger.debug(f"key {child} not found in node2 children, possibly hit bottom of tree or tree is incorrect")
 
 # Counts the number of black pixels in an image
 def count_black_pixels(image):
