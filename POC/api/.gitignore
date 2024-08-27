@@ -297,3 +297,7 @@ upload/
 output/
 .deployment
 .DS_Store
+
+astra_token_file
+secure-connect-hoprs-eu.zip
+setup.sh
