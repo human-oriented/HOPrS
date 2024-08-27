@@ -17,7 +17,7 @@ export default function Index() {
         <p className="text-sm text-left">Human oriented proof standard.</p>
       </div>
       <Link className="my-3" to="/encode">Encode</Link>
-      <Link className="mb-3" to="/compare">Compare</Link>
+      <Link className="mb-3" to="/demo-compare">Compare</Link>
       
     </div>
   );

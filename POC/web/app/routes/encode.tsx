@@ -82,7 +82,7 @@ useEffect(() => {
       <div className="intro text-gray-500 lg:w-2/3 mx-auto mb-5 text-sm">
         <h1 className="font-bold text-3xl text-black">Image Encoder</h1>
         <p className="my-3">This tool will encode any image and generate quad tree file which can be used for image comparison.</p>
-        <p>To compare and image with the generated quad tree file you can use our <Link className="underline" to="/compare">image comparison tool</Link>.</p>
+        <p>To compare and image with the generated quad tree file you can use our <Link className="underline" to="/demo-compare">image comparison tool</Link>.</p>
       </div>
       <fetcher.Form method="POST" encType="multipart/form-data" className="flex flex-col w-full">
         <div className="files flex flex-row items-center">
