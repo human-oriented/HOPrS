@@ -17,6 +17,7 @@ from cassandra.cluster import Cluster
 from cassandra.auth import PlainTextAuthProvider
 from cassandra.query import BatchStatement, ConsistencyLevel
 import uuid
+import datetime as DateTime
 
 
 load_dotenv()
@@ -129,7 +130,7 @@ class QuadTreeNode:
         return len(self.children) == 0
 
     def add_child(self, path_segment, child_node):
-        print(f"add_child called {path_segment} {child_node.path}")
+        #print(f"add_child called {path_segment} {child_node.path}")
         self.children[path_segment] = child_node
 
     def should_purge(self):
@@ -226,7 +227,7 @@ class QuadTree:
         self.root = self.split_image(image, (0, 0, width, height), 1, '')
 
     def split_image(self, image, box, depth, path=''):
-        current_app.logger.debug(f"split_image called {path}")
+        #current_app.logger.debug(f"split_image called {path}")
         x0, y0, x1, y1 = box
         node = QuadTreeNode(image, box, depth, self.hash_algorithm, path)
 
@@ -291,12 +292,13 @@ class QuadTree:
             session.execute(batch)
         except:
             print("Error: Could not write to Astra DB")
+        print(f"Inserted into Astra DB with unique reference {image_id}")
 
     def astra_db_iterate_nodes(self, node:QuadTreeNode, batch:BatchStatement, prepared_stmt:str, image_id:uuid):
         batch.add(prepared_stmt, (image_id, node.path, node.path.count('-'), node.box[0], node.box[1], 
                                   node.box[2], node.box[3], node.box[2]-node.box[0], node.box[3]-node.box[1], 
                                   node.hash_algorithm, 
-                                  node.phash, hex_to_binary_vector(node.phash), "N/A"))
+                                  node.phash, hex_to_binary_vector(node.phash), self.unique_qt_reference + " " + str(DateTime.now())))
         for child in node.children.values():
             self.astra_db_iterate_nodes(child, batch, prepared_stmt, image_id)
 
@@ -361,7 +363,7 @@ def retrieve_quadtree(image_id):
     return qt_root
 
 def parse_string_to_tree(csv_str):
-    current_app.logger.debug(f"parse_string_to_tree {csv_str}")
+    #current_app.logger.debug(f"parse_string_to_tree {csv_str}")
 
     string_io = io.StringIO(csv_str)
     first_line = next(string_io, None)
@@ -452,7 +454,7 @@ def compare_and_output_images(
         distance = hamming_distance(node1.phash, node2.phash)
         node1.ham_distance = distance
         node2.ham_distance = distance
-        current_app.logger.debug(f" -2a compare_and_output_images node1.path:{node1.path} with phash: {node1.phash} vs node2.path: {node2.path} with phash:{node2.phash}  distance {distance} against threshold {threshold}")
+        #current_app.logger.debug(f" -2a compare_and_output_images node1.path:{node1.path} with phash: {node1.phash} vs node2.path: {node2.path} with phash:{node2.phash}  distance {distance} against threshold {threshold}")
 
         #This section matches (below threshold). 
         #Let's remove the nodes beneath this so that we can generate an optimised version later
@@ -468,17 +470,17 @@ def compare_and_output_images(
 
         draw_comparison(image_list, list_pixel_counter, node1, node2, output_path, counter, threshold, compare_depth)
         counter[0] += 1
-    current_app.logger.debug(f" -2b compare_and_output_images counter {counter[0]}")
+    #current_app.logger.debug(f" -2b compare_and_output_images counter {counter[0]}")
     
     for child in node1.children:
-        current_app.logger.debug(f" -3 compare_and_output_images key:{child} len node1: {len(node1.children)}  len node2:{len(node2.children)}____ ")
+#        current_app.logger.debug(f" -3 compare_and_output_images key:{child} len node1: {len(node1.children)}  len node2:{len(node2.children)}____ ")
         
         
         if child in node2.children:
-            current_app.logger.debug(f"recursing down from {node1.path} to {node1.children[child].path} and {node2.children[child].path}")
+#            current_app.logger.debug(f"recursing down from {node1.path} to {node1.children[child].path} and {node2.children[child].path}")
             compare_and_output_images(image_list, list_pixel_counter, node1.children[child], node2.children[child], image_path, output_path, threshold, counter, compare_depth)
-        else:
-            current_app.logger.debug(f"key {child} not found in node2 children, possibly hit bottom of tree or tree is incorrect")
+#        else:
+#            current_app.logger.debug(f"key {child} not found in node2 children, possibly hit bottom of tree or tree is incorrect")
 
 # Counts the number of black pixels in an image
 def count_black_pixels(image):

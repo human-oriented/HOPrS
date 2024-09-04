@@ -27,7 +27,11 @@ def download_qt(qt_ref:str):
     except:
         return "Server issue writing to file", 500
     
+#Try and figure out how to assemble a URL to the file.  
+    print("csv_file : " + csv_file)
+    print("output_folder : " + output_folder)
     print("os.path.basename(csv_file) : " + os.path.basename(csv_file))
     print("os.path.basename(output_folder) : " + os.path.basename(output_folder))
-    
+    print(f"URLs: {url_for('get_file', folder=os.path.basename(output_folder), filename=os.path.basename(csv_file), _external=True)}")
+
     return {"csv_qt_file": url_for('get_file', folder=os.path.basename(output_folder), filename=os.path.basename(csv_file), _external=True)},200

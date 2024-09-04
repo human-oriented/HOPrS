@@ -3,7 +3,6 @@ import cv2
 import json
 from datetime import datetime, timezone
 from utils.utils import QuadTree, convert_heic
-from cassandra.query import BatchStatement, SimpleStatement,ConsistencyLevel
 
 
 def encode_image(filepath, depth, algorithm, resize, crop, note, file):
@@ -47,6 +46,6 @@ def encode_image(filepath, depth, algorithm, resize, crop, note, file):
     # Assuming QuadTree and its methods are defined elsewhere
     quad_tree = QuadTree(image, depth, orig_x, orig_y, x0, y0, x1, y1, algorithm, str(filepath) + " " + str(current_time))
     quad_tree.print_tree(open(filename_dot_qt, "w"))
-    quad_tree.write_to_astra_db()
+    quad_tree.write_to_astra_db() #Consider what to do with other versions of this image already in the database. Skip this or not?
 
     return filename_dot_qt

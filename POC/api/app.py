@@ -1,6 +1,5 @@
 import os
 import cv2
-import numpy as np
 from flask import Flask, request, current_app, send_file, jsonify, send_from_directory
 from flask_restx import Api, Resource
 from werkzeug.utils import secure_filename
@@ -9,8 +8,8 @@ from routes.compare import compare_image
 from routes.encode import encode_image
 from routes.search import search_images
 from routes.download import download_qt
+from routes.count import count_database
 from utils.utils import (validate_image, validate_quadtree, convert_heic)
-from PIL import Image
 
 app = Flask(__name__)
 
@@ -147,17 +146,19 @@ class Compare(Resource):
         original_image_qt_file.save(original_image_qt_filepath)
         output_folder = os.path.join(current_app.config['OUTPUT_FOLDER'], os.path.splitext(new_image_filename)[0])
         os.makedirs(output_folder, exist_ok=True)
-
-        original_image = new_image_filepath  # Reuse the uploaded new image as the base image
-        new_image_qt_filepath = new_image_filepath + ".qt"
-
         try:
-            response_data = compare_image(original_image, original_image_qt_filepath, new_image_filepath, new_image_filename, new_image_qt_filepath, threshold, compare_depth, output_folder)
+            response_data = compare_image(original_image_qt_filepath, new_image_filepath, threshold, compare_depth, output_folder)
             return response_data
 
         except Exception as e:
             return e.message, 500
 
+#BAsic db admin - counts the umber of records int eh DB and number of unique image_ids (quadtrees)
+@ns.route('/count')
+@ns.response(404, 'Task not found')
+class Count_Database(Resource):
+    def get(self):
+        return count_database()
 # Searches if there is a particular image in our database
 # Returns closest matches if any
 @ns.route('/search')

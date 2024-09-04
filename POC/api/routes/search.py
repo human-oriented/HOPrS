@@ -43,7 +43,7 @@ def search_images(image):
         
         #LIMITATION!  For now only search for the root node of a quad tree, find the closest greater than some arbitary amount. 
         #query = "SELECT count(*), similarity_euclidean(hash_vec, ?) AS vec_score FROM " + ASTRA_DB_KEYSPACE + "."+ ASTRA_DB_TABLE + " WHERE path='' AND vec_score > 0.5 LIMIT 1;"
-        query = "SELECT image_id, similarity_euclidean(hash_vec, ?) FROM " + ASTRA_DB_KEYSPACE + "."+ ASTRA_DB_TABLE + "  ORDER BY hash_vec ANN OF ? LIMIT 1;"    
+        query = "SELECT image_id, similarity_euclidean(hash_vec, ?), misc FROM " + ASTRA_DB_KEYSPACE + "."+ ASTRA_DB_TABLE + "  ORDER BY hash_vec ANN OF ? LIMIT 1;"    
         
         prepared_stmt = session.prepare(query)
         results = session.execute(prepared_stmt,[vector, vector] )
@@ -53,11 +53,13 @@ def search_images(image):
         for document in results: 
             if document[1] < 0.5:
                 image_id = document[0] #Top (best) match
+                print(f"Found a match{document[2]}")
             else:
                 #No match found
-                print(f"No match found {document[1]}")
-                return f"No close match in database found, closest found {document[1]}", 404   
-     
+                print(f"No match found ")
+                print(f'No close match in database found, closest found distance of {document[1]} with image_id {document[0]} with misc: {document[2]}')
+                return f"No close match in database found, closest found euclidean distance of {document[1]}", 404   
+            
         
         new_image_filename = secure_filename(new_image_file.filename)
         output_folder = os.path.join(current_app.config['OUTPUT_FOLDER'], os.path.splitext(new_image_filename)[0])
@@ -101,7 +103,13 @@ def search_images(image):
         highlight_image_path = os.path.join(output_folder, "highlighted_image.png")
         create_red_overlay(filepath, difference_mask_path, highlight_image_path, translucence=50)
 
-        unchanged_pixels = count_black_pixels(list_images[1])
-        url = url_for('get_file', folder=os.path.basename(output_folder), filename=os.path.basename(highlight_image_path), _external=True),
+        unchanged_pixels = count_black_pixels(list_images[1])        
 
-        return url, 200
+        return {
+            "difference_mask": url_for('get_file', folder=os.path.basename(output_folder), filename=os.path.basename(difference_mask_path), _external=True),
+            "highlight_image": url_for('get_file', folder=os.path.basename(output_folder), filename=os.path.basename(highlight_image_path), _external=True),
+            "unchanged pixels": unchanged_pixels
+         },200
+
+
+        
