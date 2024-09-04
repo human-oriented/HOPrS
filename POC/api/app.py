@@ -9,6 +9,7 @@ from routes.encode import encode_image
 from routes.search import search_images
 from routes.download import download_qt
 from routes.count import count_database
+from routes.list import list_database
 from utils.utils import (validate_image, validate_quadtree, convert_heic)
 
 app = Flask(__name__)
@@ -156,9 +157,16 @@ class Compare(Resource):
 #BAsic db admin - counts the umber of records int eh DB and number of unique image_ids (quadtrees)
 @ns.route('/count')
 @ns.response(404, 'Task not found')
-class Count_Database(Resource):
+class Count_Database(Resource): 
     def get(self):
         return count_database()
+    
+@ns.route('/list')
+@ns.response(404, 'Task not found')
+class List_Database(Resource): 
+    def get(self):
+        return list_database()
+
 # Searches if there is a particular image in our database
 # Returns closest matches if any
 @ns.route('/search')
