@@ -284,9 +284,9 @@ class QuadTree:
         image_id = uuid.uuid4()
         # Create a batch statement
         batch = BatchStatement(consistency_level=ConsistencyLevel.QUORUM)
-
+        print(f"Inserting into Astra DB with unique reference {image_id}")
         self.astra_db_iterate_nodes(self.root, batch, prepared_stmt, image_id)
-
+        print(f"Batch statement is {batch}")
         try:
 
             session.execute(batch)
@@ -298,7 +298,7 @@ class QuadTree:
         batch.add(prepared_stmt, (image_id, node.path, node.path.count('-'), node.box[0], node.box[1], 
                                   node.box[2], node.box[3], node.box[2]-node.box[0], node.box[3]-node.box[1], 
                                   node.hash_algorithm, 
-                                  node.phash, hex_to_binary_vector(node.phash), self.unique_qt_reference + " " + str(DateTime.now())))
+                                  node.phash, hex_to_binary_vector(node.phash), self.unique_qt_reference ))
         for child in node.children.values():
             self.astra_db_iterate_nodes(child, batch, prepared_stmt, image_id)
 

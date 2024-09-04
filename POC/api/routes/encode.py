@@ -1,7 +1,8 @@
 import os
 import cv2
 import json
-from datetime import datetime, timezone
+import datetime
+
 from utils.utils import QuadTree, convert_heic
 
 
@@ -22,9 +23,10 @@ def encode_image(filepath, depth, algorithm, resize, crop, note, file):
 
     orig_x, orig_y = resize if resize else (0, 0)
     x0, y0, x1, y1 = crop if crop else (0, 0, 0, 0)
+    now = datetime.datetime.now()
     
     with open(filename_dot_hoprs, "w") as filehandle_dot_hoprs:
-        current_time = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%SZ')
+        current_time = now.strftime('%Y-%m-%d %H:%M:%SZ')
         data = {
             "When": current_time,
             "What": "ENCODED",
@@ -44,7 +46,7 @@ def encode_image(filepath, depth, algorithm, resize, crop, note, file):
         json.dump(data, filehandle_dot_hoprs, indent=4)
 
     # Assuming QuadTree and its methods are defined elsewhere
-    quad_tree = QuadTree(image, depth, orig_x, orig_y, x0, y0, x1, y1, algorithm, str(filepath) + " " + str(current_time))
+    quad_tree = QuadTree(image, depth, orig_x, orig_y, x0, y0, x1, y1, algorithm, f"filepath: {filepath} time: {current_time} depth: {depth} note: { note}")
     quad_tree.print_tree(open(filename_dot_qt, "w"))
     quad_tree.write_to_astra_db() #Consider what to do with other versions of this image already in the database. Skip this or not?
 
