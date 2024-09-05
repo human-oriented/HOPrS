@@ -176,14 +176,19 @@ class Search(Resource):
      def post(self):
         args = search_parser.parse_args()
         image = args['image']
+        threshold = args['threshold']
+        compare_depth = args['compare_depth']
 
         if image.filename == '':
             return "No selected file"
-        
+        if threshold < 0 or threshold > 100:
+            return "Threshold must be between 1 and 100.", 400
+        if compare_depth < 1 or compare_depth > 10:
+            return "Compare depth must be between 1 and 10.", 400
         try:
             valid, message = validate_image(image)
             if valid:
-                result = search_images(image)
+                result = search_images(image, threshold, compare_depth)
                 return result
             else:
                 return message

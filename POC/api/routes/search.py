@@ -16,7 +16,7 @@ from utils.utils import (
 from cassandra.query import BatchStatement, ConsistencyLevel
 
 
-def search_images(image):
+def search_images(image, threshold = 5, compare_depth = 5):
     new_image_file = image
     if new_image_file.filename == '':
         return "No selected file", 400
@@ -40,6 +40,7 @@ def search_images(image):
         quad_tree = QuadTree(uploaded_image, depth, orig_x, orig_y, x0, y0, x1, y1, algorithm, str(new_image_file.filename)+" "+str(current_time))
         current_app.logger.debug("bc")
         vector = hex_to_binary_vector(quad_tree.root.phash)
+        print("Searching for vector: ", vector)
         
         #LIMITATION!  For now only search for the root node of a quad tree, find the closest greater than some arbitary amount. 
         #query = "SELECT count(*), similarity_euclidean(hash_vec, ?) AS vec_score FROM " + ASTRA_DB_KEYSPACE + "."+ ASTRA_DB_TABLE + " WHERE path='' AND vec_score > 0.5 LIMIT 1;"
@@ -49,11 +50,11 @@ def search_images(image):
         results = session.execute(prepared_stmt,[vector, vector] )
     
         #Have found and located a match. 
-
+        #Euclidian matching returns a 1.0 as a perfect match. 
         for document in results: 
-            if document[1] < 0.5:
+            if document[1] < 0.2:
                 image_id = document[0] #Top (best) match
-                print(f"Found a match{document[2]}")
+                print(f"Found a match at distance of {document[1]} document misc details are : {document[2]} ")
             else:
                 #No match found
                 print(f"No match found ")
@@ -78,7 +79,6 @@ def search_images(image):
         list_pixel_counter = [pixel_counter]
         list_images = [uploaded_image, image_difference_mask]
 
-        threshold = int(request.form.get('threshold', 10))
         compare_depth = int(request.form.get('compare_depth', 5))
         
         # #Reset the removed flag from the quad tree for the image hta thas been specified so that 

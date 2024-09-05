@@ -20,4 +20,6 @@ download_parser.add_argument('qt_ref', type=str, required=True, help='qt_ref to 
 
 search_parser = reqparse.RequestParser()
 search_parser.add_argument('image', location='files', type=FileStorage, required=True, help='Image to search')
+search_parser.add_argument('threshold', type=int, required=True, help='Threshold for comparison', default=10)
+search_parser.add_argument('compare_depth', type=int, required=True, help='Depth for comparison', default=5)
 

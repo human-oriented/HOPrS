@@ -121,11 +121,15 @@ def hoprs_list(server_url):
         handle_request_error(e)
 
 # Function to handle /hoprs/search
-def hoprs_search(server_url, image):
+def hoprs_search(server_url, image, threshold, compare_depth):
     url = f"{server_url}/hoprs/search"
     try:
         files = {'image': open(image, 'rb')}
-        response = requests.post(url, files=files)
+        params = {
+            'threshold': threshold,
+            'compare_depth': compare_depth
+        }
+        response = requests.post(url, files=files, params=params)
         response.raise_for_status()
         response_json = response.json()
         print(response_json)
@@ -181,6 +185,8 @@ def main():
     # Subparser for /search
     search_parser = subparsers.add_parser('search', help='Search an image')
     search_parser.add_argument('image', help='Path to the image file')
+    search_parser.add_argument('threshold', help='The threshold for comparison suggest around 5')
+    search_parser.add_argument('compare_depth', help='How far down the tree to comapre suggest 5')
 
     # Subparser for /version
     subparsers.add_parser('version', help='Get version information')
@@ -200,7 +206,7 @@ def main():
     elif args.command == 'list':
         hoprs_list(args.server_url)
     elif args.command == 'search':
-        hoprs_search(args.server_url, args.image)
+        hoprs_search(args.server_url, args.image, args.threshold, args.compare_depth)
     elif args.command == 'version':
         hoprs_version(args.server_url)
 
