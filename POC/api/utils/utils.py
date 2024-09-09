@@ -11,9 +11,13 @@ from enum import Enum
 import imagehash
 import pdqhash
 import magic
-from astrapy.client import DataAPIClient
 from dotenv import load_dotenv
-import tempfile
+import json
+from cassandra.cluster import Cluster
+from cassandra.auth import PlainTextAuthProvider
+from cassandra.query import BatchStatement, ConsistencyLevel
+import uuid
+import datetime as DateTime
 
 
 load_dotenv()
@@ -27,18 +31,28 @@ MAGIC_NUMBERS = {
     'heic': 'image/heic'
 }
 
-# Initialize the client and get a "Database" object
-client = DataAPIClient(os.environ["ASTRA_DB_APPLICATION_TOKEN"])
-database = client.get_database_by_api_endpoint(os.environ["ASTRA_DB_API_ENDPOINT"])
-print(f"Database connected: {database.info().name}\n")
 
-try:
-    print("Trying to get the collection")
-    collection = database.get_collection("quadtree_records")
-except astrapy.DataApiException as e:
-    print(f"Exception {e}")
+#Initialise DB connection (Astra (Cassandra))
+ASTRA_DB_SECURE_CONNECT_BUNDLE = os.getenv("ASTRA_DB_SECURE_CONNECT_BUNDLE")
+ASTRA_DB_TOKEN_FILE = os.getenv("ASTRA_DB_TOKEN_FILE")
+ASTRA_DB_KEYSPACE = os.getenv("ASTRA_DB_KEYSPACE")
+ASTRA_DB_TABLE = os.getenv("ASTRA_DB_TABLE")
+#num_operations_str = os.getenv("NUM_OPERATIONS", 100)
+cloud_config= {
+  'secure_connect_bundle': ASTRA_DB_SECURE_CONNECT_BUNDLE
+}
+with open(ASTRA_DB_TOKEN_FILE) as f:
+    secrets = json.load(f)
 
-print(f"Opened - Collection: {collection.full_name}\n")
+CLIENT_ID = secrets["clientId"]
+CLIENT_SECRET = secrets["secret"]
+
+auth_provider = PlainTextAuthProvider(CLIENT_ID, CLIENT_SECRET)
+cluster = Cluster(cloud=cloud_config, auth_provider=auth_provider)
+session = cluster.connect()
+
+#Finished setting up database. 
+
 
 
 # Helper function to convert a list of bits to a hexadecimal string
@@ -115,29 +129,8 @@ class QuadTreeNode:
     def is_leaf_node(self):
         return len(self.children) == 0
 
-    def store_in_astra_db(self, path, level, unique_qt_reference, jsonrepresentation):
-        vector = hex_to_binary_vector(self.phash)
-        if len(vector) != 256:
-            print(f"Error: Vector length is {len(vector)}, expected 256. Path: {path}, Phash: {self.phash}")
-        jsonrepresentation.append({
-            "_id": unique_qt_reference + ' ' + path,
-            'qt_ref': unique_qt_reference,
-            'path': path,
-            'level': level,
-            'x0': self.box[0],
-            'y0': self.box[1],
-            'x1': self.box[2],
-            'y1': self.box[3],
-            'width': self.box[2] - self.box[0],
-            'height': self.box[3] - self.box[1],
-            'hash_algorithm': self.hash_algorithm,
-            'perceptual_hash_hex': self.phash,
-            '$vector': vector
-            #ty': self.quality
-        })
-
     def add_child(self, path_segment, child_node):
-        print(f"add_child called {path_segment} {child_node.path}")
+        #print(f"add_child called {path_segment} {child_node.path}")
         self.children[path_segment] = child_node
 
     def should_purge(self):
@@ -201,8 +194,7 @@ class QuadTreeNode:
             for child in self.children.values():
                 child.print_optimised_tree(file)
 
-#Class to wrap a tree of quadtreenodes when creating a structuree
-#from an image
+#Class to wrap a tree of quadtreenodes when creating a structure from an image
 class QuadTree:
     def __init__(self, image=None, max_depth=0, orig_x=0, orig_y=0, x0=0, y0=0, x1=0, y1=0, hash_algorithm='pdq', unique_qt_reference=""):
         current_app.logger.debug(f"quadtree constructor called {orig_x} {orig_y} {x0} {y0} {x1} {y1}")
@@ -235,7 +227,7 @@ class QuadTree:
         self.root = self.split_image(image, (0, 0, width, height), 1, '')
 
     def split_image(self, image, box, depth, path=''):
-        current_app.logger.debug(f"split_image called {path}")
+        #current_app.logger.debug(f"split_image called {path}")
         x0, y0, x1, y1 = box
         node = QuadTreeNode(image, box, depth, self.hash_algorithm, path)
 
@@ -260,33 +252,6 @@ class QuadTree:
 
         return node
 
-    def append_json_representation(self, node=None, level=0, path=''):
-        current_app.logger.debug(f"DEPRECATED append_json_representation called {path}")
-        if node is None:
-            node = self.root
-
-        node.store_in_astra_db(path, level, self.unique_qt_reference, self.jsonrepresentation)
-        
-        for new_path, child in node.children.items():
-            self.append_json_representation(child, level + 1, new_path)
-
-    def write_to_astra_db(self, node:QuadTreeNode=None, level=0, path=''):
-        current_app.logger.debug(f"DEPRECATED write_to_astra_db called {path}")
-
-        self.append_json_representation(node, level, path)
-        current_app.logger.debug(f"len of jsonrepresentation is {len(self.jsonrepresentation)}")
-        
-        validate_vectors(self.jsonrepresentation)
-        
-        current_app.logger.debug(f"First item {self.jsonrepresentation[0]}")
-        current_app.logger.debug(f"Second item {self.jsonrepresentation[1]}")
-        
-        try:
-            insertion_result = collection.insert_many(self.jsonrepresentation)
-            current_app.logger.debug(f"* Inserted {len(insertion_result.inserted_ids)} items.")
-        except Exception as e:
-            current_app.logger.debug(f"* Exception inserting: {e}")
-
 
     def print_tree(self, file, node:QuadTreeNode=None, level:int=0, path=''):
         current_app.logger.debug(f"print_tree called on QuadTree object {path}")
@@ -306,6 +271,38 @@ class QuadTree:
             parent_node = self.node_map.get(parent_path, None)
             if parent_node:
                 parent_node.children[path] = node
+                
+          
+    def write_to_astra_db(self):
+        print("write_to_astra_db called")
+        insert_query = f"""
+        INSERT INTO {ASTRA_DB_KEYSPACE}.{ASTRA_DB_TABLE} (image_id, path, depth, x0, y0, x1, y1, width, height, algorithm, hash, hash_vec, misc)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
+
+        prepared_stmt = session.prepare(insert_query)
+        image_id = uuid.uuid4()
+        # Create a batch statement
+        batch = BatchStatement(consistency_level=ConsistencyLevel.QUORUM)
+        print(f"Inserting into Astra DB with unique reference {image_id}")
+        self.astra_db_iterate_nodes(self.root, batch, prepared_stmt, image_id)
+        print(f"Batch statement is {batch}")
+        try:
+
+            session.execute(batch)
+        except:
+            print("Error: Could not write to Astra DB")
+        print(f"Inserted into Astra DB with unique reference {image_id}")
+
+    def astra_db_iterate_nodes(self, node:QuadTreeNode, batch:BatchStatement, prepared_stmt:str, image_id:uuid):
+        batch.add(prepared_stmt, (image_id, node.path, node.path.count('-'), node.box[0], node.box[1], 
+                                  node.box[2], node.box[3], node.box[2]-node.box[0], node.box[3]-node.box[1], 
+                                  node.hash_algorithm, 
+                                  node.phash, hex_to_binary_vector(node.phash), self.unique_qt_reference ))
+        for child in node.children.values():
+            self.astra_db_iterate_nodes(child, batch, prepared_stmt, image_id)
+
+        
 # Read the image from the disk
 def read_image(image_path):
     image = cv2.imread(image_path)
@@ -326,25 +323,47 @@ def create_quadtree_from_image(image_path, depth, orig_x, orig_y, x0, y0, x1, y1
     
     return quad_tree
 
-#Retrieve from database
-def retrieve_quadtree(unique_qt_reference):
-    query = {
-        "qt_ref": {"$eq": unique_qt_reference}
-    }
-    csv_str = ""
-    results = collection.find(query)
-    current_app.logger.debug(f"About to retrieve QT from astra with uniqe ref : {unique_qt_reference}")
 
-    for record in results:
-        current_app.logger.debug(f"found record {record}")
-        csv_str += f'{record["path"]},{record["level"]},{record["x0"]},{record["y0"]},{record["x1"]},{record["y1"]},{record["width"]},{record["height"]},pdq,{record["perceptual_hash_hex"]},\n'
+def retrieve_quadtree_to_csv(image_id):
+    current_app.logger.debug(f"retrieve_quadtree_to_csv called {image_id}")
+    try:
+        current_app.logger.debug(f"Checking to see if qt_ref {image_id} is actually UUID")
+        guid_image_id = uuid.UUID(str(image_id))
+    except:
+        current_app.logger.debug(f"Could not convert {image_id} to UUID")
+        return ""
+    
+    query = "SELECT image_id,path,depth,x0,y0,x1,y1,width,height,algorithm,hash FROM " + ASTRA_DB_KEYSPACE + "."+ ASTRA_DB_TABLE + " WHERE image_id=?;"
+    prepared_stmt = session.prepare(query)
+  
+    print(f"prepared_stmt is {prepared_stmt}")
+    
+    # Execute the batch statement
+    results = session.execute(prepared_stmt,[guid_image_id,] )
+   
+    csv = ""
+    for document in results: 
+        csv += f"{document[1]},{document[2]},{document[3]},{document[4]},{document[5]},{document[6]},{document[7]},{document[8]},{document[9]},{document[10]},\n"       
+        
+    if csv == "":
+        current_app.logger.debug(f"Could not find qt in db for {image_id}")
+        
+    current_app.logger.debug(f"csv is  {csv}")
+    return csv #returns an empty string if nothing found
 
-    current_app.logger.debug(f"finished importing records from db into CSV")
-    qt_root = parse_string_to_tree(sort_csv_by_first_field(csv_str))
+
+#Retrieve from database and returns a quad tree in memory
+#Note change of name from qt_ref to image_id
+def retrieve_quadtree(image_id):
+    current_app.logger.debug(f"retrieve_quadtree called {image_id}")
+    csv = retrieve_quadtree_to_csv(image_id)
+    if (csv == ""):
+        return None
+    qt_root = parse_string_to_tree(sort_csv_by_first_field(csv))
     return qt_root
 
 def parse_string_to_tree(csv_str):
-    current_app.logger.debug(f"parse_string_to_tree {csv_str}")
+    #current_app.logger.debug(f"parse_string_to_tree {csv_str}")
 
     string_io = io.StringIO(csv_str)
     first_line = next(string_io, None)
@@ -352,7 +371,7 @@ def parse_string_to_tree(csv_str):
     for line in string_io:
         parts = line.strip().split(',')
         path_segments = parts[0].strip().strip('-').split('-') #Lose whitespace at end and trailing dash
-        current_app.logger.debug(f"parse_string_to_tree path_segments should not have trailing - : {path_segments}")
+        #current_app.logger.debug(f"parse_string_to_tree path_segments should not have trailing - : {path_segments}")
         current = root
         for segment in path_segments:
             segment+= '-'
@@ -373,13 +392,13 @@ def hamming_distance(hash1, hash2):
 
 # Marks a node and its children as removed
 def mark_as_removed(node : QuadTreeNode, IsRemoved=True):
-    current_app.logger.debug(f"mark_as_removed called setting node at path:{node.path} Isremoved:{IsRemoved}")
+    #current_app.logger.debug(f"mark_as_removed called setting node at path:{node.path} Isremoved:{IsRemoved}")
     node.removed = IsRemoved
     for child in node.children.values():
         mark_as_removed(child, IsRemoved)
 
 def mark_as_matched(node : QuadTreeNode, MatchedStatus=Matched.UNKNOWN):
-    current_app.logger.debug(f"mark_as_matched called setting node at path:{node.path} Isremoved:{MatchedStatus}")
+    #current_app.logger.debug(f"mark_as_matched called setting node at path:{node.path} Isremoved:{MatchedStatus}")
     node.matched = MatchedStatus
     for child in node.children.values():
         mark_as_matched(child, MatchedStatus)
@@ -435,7 +454,7 @@ def compare_and_output_images(
         distance = hamming_distance(node1.phash, node2.phash)
         node1.ham_distance = distance
         node2.ham_distance = distance
-        current_app.logger.debug(f" -2a compare_and_output_images node1.path:{node1.path} with phash: {node1.phash} vs node2.path: {node2.path} with phash:{node2.phash}  distance {distance} against threshold {threshold}")
+        #current_app.logger.debug(f" -2a compare_and_output_images node1.path:{node1.path} with phash: {node1.phash} vs node2.path: {node2.path} with phash:{node2.phash}  distance {distance} against threshold {threshold}")
 
         #This section matches (below threshold). 
         #Let's remove the nodes beneath this so that we can generate an optimised version later
@@ -451,21 +470,17 @@ def compare_and_output_images(
 
         draw_comparison(image_list, list_pixel_counter, node1, node2, output_path, counter, threshold, compare_depth)
         counter[0] += 1
-    current_app.logger.debug(f" -2b compare_and_output_images counter {counter[0]}")
+    #current_app.logger.debug(f" -2b compare_and_output_images counter {counter[0]}")
     
-    for key in node1.children:
-        current_app.logger.debug(f" -3 compare_and_output_images key:{key} len node1: {len(node1.children)}  len node2:{len(node2.children)}____ ")
+    for child in node1.children:
+#        current_app.logger.debug(f" -3 compare_and_output_images key:{child} len node1: {len(node1.children)}  len node2:{len(node2.children)}____ ")
         
-        for k1 in node1.children:
-            current_app.logger.debug(f"  -3. key in node1 is {k1}___")    
-        for k2 in node2.children:
-            current_app.logger.debug(f"  -3. key in node2 is {k2}___")
         
-        if key in node2.children:
-            current_app.logger.debug(f"recursing down from {node1.path} to {node1.children[key].path} and {node2.children[key].path}")
-            compare_and_output_images(image_list, list_pixel_counter, node1.children[key], node2.children[key], image_path, output_path, threshold, counter, compare_depth)
-        else:
-            current_app.logger.debug(f"key {key} not found in node2 children, possibly hit bottom of tree or tree is incorrect")
+        if child in node2.children:
+#            current_app.logger.debug(f"recursing down from {node1.path} to {node1.children[child].path} and {node2.children[child].path}")
+            compare_and_output_images(image_list, list_pixel_counter, node1.children[child], node2.children[child], image_path, output_path, threshold, counter, compare_depth)
+#        else:
+#            current_app.logger.debug(f"key {child} not found in node2 children, possibly hit bottom of tree or tree is incorrect")
 
 # Counts the number of black pixels in an image
 def count_black_pixels(image):
@@ -591,14 +606,7 @@ def convert_heic(file):
             # Convert image buffer to a numpy array and then decode with OpenCV
             image_array = np.frombuffer(image_buffer.getvalue(), dtype=np.uint8)
             return image_array
-            # image_cv = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
-            # current_app.logger.debug(f"Convert heic to png - image decoded")
 
-            # if image_cv is not None:
-            #     current_app.logger.debug(f"image cv not null")
-            #     return image_cv
-            # else:
-            #     raise ValueError("OpenCV could not read the image")
             
     except Exception as e:
         raise ValueError("Could not convert heic to png")

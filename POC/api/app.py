@@ -1,15 +1,16 @@
 import os
 import cv2
-import numpy as np
 from flask import Flask, request, current_app, send_file, jsonify, send_from_directory
 from flask_restx import Api, Resource
 from werkzeug.utils import secure_filename
-from parsers.parsers import encode_parser, compare_parser, search_parser
+from parsers.parsers import encode_parser, compare_parser, search_parser, download_parser
 from routes.compare import compare_image
 from routes.encode import encode_image
 from routes.search import search_images
+from routes.download import download_qt
+from routes.count import count_database
+from routes.list import list_database
 from utils.utils import (validate_image, validate_quadtree, convert_heic)
-from PIL import Image
 
 app = Flask(__name__)
 
@@ -28,8 +29,18 @@ if not os.path.exists(upload_folder):
 if not os.path.exists(output_folder):
     os.makedirs(output_folder)
 
-api = Api(app, version='0.0.4', title='HOPrS', description='Open standard for content authentication')
+api = Api(app, version='0.0.7', title='HOPrS', description='Open standard for content authentication')
 ns = api.namespace('hoprs', description='Human oriented proof standard')
+
+@ns.route('/download/')
+class Download(Resource):
+    @api.expect(download_parser)
+    def post(self):
+        args = download_parser.parse_args()
+        qt_ref = args['qt_ref']
+        if (qt_ref == ''):
+            return "No qt_ref specified", 400
+        return download_qt(qt_ref)
 
 # Serves files from output folder
 @app.route('/output/<path:folder>/<path:filename>')
@@ -136,16 +147,25 @@ class Compare(Resource):
         original_image_qt_file.save(original_image_qt_filepath)
         output_folder = os.path.join(current_app.config['OUTPUT_FOLDER'], os.path.splitext(new_image_filename)[0])
         os.makedirs(output_folder, exist_ok=True)
-
-        original_image = new_image_filepath  # Reuse the uploaded new image as the base image
-        new_image_qt_filepath = new_image_filepath + ".qt"
-
         try:
-            response_data = compare_image(original_image, original_image_qt_filepath, new_image_filepath, new_image_filename, new_image_qt_filepath, threshold, compare_depth, output_folder)
+            response_data = compare_image(original_image_qt_filepath, new_image_filepath, threshold, compare_depth, output_folder)
             return response_data
 
         except Exception as e:
             return e.message, 500
+
+#BAsic db admin - counts the umber of records int eh DB and number of unique image_ids (quadtrees)
+@ns.route('/count')
+@ns.response(404, 'Task not found')
+class Count_Database(Resource): 
+    def get(self):
+        return count_database()
+    
+@ns.route('/list')
+@ns.response(404, 'Task not found')
+class List_Database(Resource): 
+    def get(self):
+        return list_database()
 
 # Searches if there is a particular image in our database
 # Returns closest matches if any
@@ -156,14 +176,19 @@ class Search(Resource):
      def post(self):
         args = search_parser.parse_args()
         image = args['image']
+        threshold = args['threshold']
+        compare_depth = args['compare_depth']
 
         if image.filename == '':
             return "No selected file"
-        
+        if threshold < 0 or threshold > 100:
+            return "Threshold must be between 1 and 100.", 400
+        if compare_depth < 1 or compare_depth > 10:
+            return "Compare depth must be between 1 and 10.", 400
         try:
             valid, message = validate_image(image)
             if valid:
-                result = search_images(image)
+                result = search_images(image, threshold, compare_depth)
                 return result
             else:
                 return message
