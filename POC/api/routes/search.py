@@ -52,7 +52,7 @@ def search_images(image, threshold = 5, compare_depth = 5):
         #Have found and located a match. 
         #Euclidian matching returns a 1.0 as a perfect match. 
         for document in results: 
-            if document[1] < 0.2:
+            if float(document[1]) > float(0.2):
                 image_id = document[0] #Top (best) match
                 print(f"Found a match at distance of {document[1]} document misc details are : {document[2]} ")
             else:
