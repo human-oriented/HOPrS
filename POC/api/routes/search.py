@@ -1,11 +1,12 @@
 import os
+import shutil
 import cv2
 import numpy as np
 from flask import request, url_for, current_app
 from werkzeug.utils import secure_filename
 from datetime import datetime, timezone
 from utils.utils import (
-    QuadTree, mark_as_removed,
+    QuadTree, mark_as_removed, draw_comparison,
     compare_and_output_images, count_black_pixels, create_red_overlay,
     Matched, hex_to_binary_vector, session, retrieve_quadtree,
     mark_as_matched
@@ -52,7 +53,7 @@ def search_images(image, threshold = 5, compare_depth = 5):
         #Have found and located a match. 
         #Euclidian matching returns a 1.0 as a perfect match. 
         for document in results: 
-            if float(document[1]) > float(0.2):
+            if float(document[1]) > float(0):
                 image_id = document[0] #Top (best) match
                 print(f"Found a match at distance of {document[1]} document misc details are : {document[2]} ")
             else:
@@ -102,13 +103,39 @@ def search_images(image, threshold = 5, compare_depth = 5):
         cv2.imwrite(difference_mask_path, list_images[1], [int(cv2.IMWRITE_JPEG_QUALITY), 50])
         highlight_image_path = os.path.join(output_folder, "highlighted_image.png")
         create_red_overlay(filepath, difference_mask_path, highlight_image_path, translucence=50)
+        
+        image_output_path = os.path.join(output_folder, os.path.basename(new_image_filename))
+        shutil.copy(filepath, image_output_path)
 
-        unchanged_pixels = count_black_pixels(list_images[1])        
+        unchanged_pixels = count_black_pixels(list_images[1])
+        draw_comparison(list_images, list_pixel_counter, db_quadtree_rootnode, quad_tree.root, output_folder, [-1], threshold, compare_depth)
+
+        quad_tree.root.purge_tree()
+        quad_tree.root.optimise_tree()
+
+        for file in os.listdir(output_folder):
+            if file.startswith("comparison_") and file.endswith(".jpg"):
+                comparison_image_path = os.path.join(output_folder, file)
+                break
+
+        if comparison_image_path is None:
+            return None, "Comparison image not found."
+
+        height, width = uploaded_image.shape[:2]
+        image_pixels = width * height
+        proportion = unchanged_pixels / image_pixels
+        stats = {
+            "matched_pixels": unchanged_pixels,
+            "total_pixels": image_pixels,
+            "proportion": proportion
+        }       
 
         return {
+            #"comparison_image": url_for('get_file', folder=os.path.basename(output_folder), filename=os.path.basename(comparison_image_path), _external=True),
             "difference_mask": url_for('get_file', folder=os.path.basename(output_folder), filename=os.path.basename(difference_mask_path), _external=True),
             "highlight_image": url_for('get_file', folder=os.path.basename(output_folder), filename=os.path.basename(highlight_image_path), _external=True),
-            "unchanged pixels": unchanged_pixels
+            "new_image": url_for('get_file', folder=os.path.basename(output_folder), filename=os.path.basename(image_output_path), _external=True),
+            "stats": stats
          },200
 
 
