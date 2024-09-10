@@ -131,7 +131,7 @@ def search_images(image, threshold = 5, compare_depth = 5):
         }       
 
         return {
-            #"comparison_image": url_for('get_file', folder=os.path.basename(output_folder), filename=os.path.basename(comparison_image_path), _external=True),
+            "comparison_image": url_for('get_file', folder=os.path.basename(output_folder), filename=os.path.basename(comparison_image_path), _external=True),
             "difference_mask": url_for('get_file', folder=os.path.basename(output_folder), filename=os.path.basename(difference_mask_path), _external=True),
             "highlight_image": url_for('get_file', folder=os.path.basename(output_folder), filename=os.path.basename(highlight_image_path), _external=True),
             "new_image": url_for('get_file', folder=os.path.basename(output_folder), filename=os.path.basename(image_output_path), _external=True),
