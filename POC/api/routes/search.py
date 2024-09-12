@@ -54,6 +54,7 @@ def search_images(image, threshold = 5, compare_depth = 5):
         for document in results: 
             count+=1
             ham = hamming_distance(document[1], quad_tree.root.phash)
+
             
             print(f"{count} hamming_distance:  {ham}")
             
