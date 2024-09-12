@@ -62,6 +62,7 @@ def bits_to_hex(bits):
     return hex_string
 
 def hex_to_binary_vector(hex_str):
+    print(f"hex_to_binary_vector called with {hex_str}")
     # Convert the hex string to binary string
     binary_str = bin(int(hex_str, 16))[2:].zfill(len(hex_str) * 4)
     # Convert binary string to a list of integers (0 and 1)
