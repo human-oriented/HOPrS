@@ -4,9 +4,9 @@ from flask import Flask, request, current_app, send_file, jsonify, send_from_dir
 from flask_restx import Api, Resource
 from werkzeug.utils import secure_filename
 from parsers.parsers import encode_parser, compare_parser, search_parser, download_parser
-from routes.compare import compare_image
 from routes.encode import encode_image
 from routes.search import search_images
+from routes.compare import compare_image
 from routes.download import download_qt
 from routes.count import count_database
 from routes.list import list_database
@@ -194,6 +194,34 @@ class Search(Resource):
                 return message
         except Exception as e:
             return str(e)
+
+@ns.route('/compare')
+@ns.response(404, 'Task not found')
+class Search(Resource):
+     @api.expect(compare_parser)
+     def post(self):
+        args = compare_parser.parse_args()
+        image = args['image']
+        threshold = args['threshold']
+        compare_depth = args['compare_depth']
+
+        if image.filename == '':
+            return "No selected file"
+        if threshold < 0 or threshold > 100:
+            return "Threshold must be between 1 and 100.", 400
+        if compare_depth < 1 or compare_depth > 10:
+            return "Compare depth must be between 1 and 10.", 400
+        try:
+            valid, message = validate_image(image)
+            if valid:
+                result = compare_images(image, threshold, compare_depth)
+                return result
+            else:
+                return message
+        except Exception as e:
+            return str(e)
+
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000)
