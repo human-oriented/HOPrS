@@ -8,7 +8,7 @@ from utils.utils import (
     QuadTree, mark_as_removed,
     compare_and_output_images, count_black_pixels, create_red_overlay,
     Matched, hex_to_binary_vector, session, retrieve_quadtree,
-    mark_as_matched
+    mark_as_matched, hamming_distance
 )
 from utils.utils import (
     session, ASTRA_DB_KEYSPACE, ASTRA_DB_TABLE
@@ -39,28 +39,32 @@ def search_images(image, threshold = 5, compare_depth = 5):
         
         quad_tree = QuadTree(uploaded_image, depth, orig_x, orig_y, x0, y0, x1, y1, algorithm, str(new_image_file.filename)+" "+str(current_time))
         current_app.logger.debug("bc")
-        vector = hex_to_binary_vector(quad_tree.root.phash)
-        print("Searching for vector: ", vector)
         
-        #LIMITATION!  For now only search for the root node of a quad tree, find the closest greater than some arbitary amount. 
-        #query = "SELECT count(*), similarity_euclidean(hash_vec, ?) AS vec_score FROM " + ASTRA_DB_KEYSPACE + "."+ ASTRA_DB_TABLE + " WHERE path='' AND vec_score > 0.5 LIMIT 1;"
-        query = "SELECT image_id, similarity_euclidean(hash_vec, ?), misc FROM " + ASTRA_DB_KEYSPACE + "."+ ASTRA_DB_TABLE + "  ORDER BY hash_vec ANN OF ? LIMIT 1;"    
-        
+        #Retrieve all the hamming distances and iterate through.  NOT using a vector search.  This is a brute force search.
+        query = "SELECT image_id, hash, misc FROM " + ASTRA_DB_KEYSPACE + "."+ ASTRA_DB_TABLE + " where path=''  ALLOW FILTERING; "    
+        print(f"query {query}")
         prepared_stmt = session.prepare(query)
-        results = session.execute(prepared_stmt,[vector, vector] )
+        results = session.execute(prepared_stmt )
     
-        #Have found and located a match. 
-        #Euclidian matching returns a 1.0 as a perfect match. 
+        lowest_hamming = 99999 #Higher than the highest possible hamming distance
+        image_id = None
+        lowest_misc = "None found yet"
+        count = 0
+        #Not trusting the similarty metric        #Have found and located a match. 
         for document in results: 
-            if document[1] < 0.2:
-                image_id = document[0] #Top (best) match
-                print(f"Found a match at distance of {document[1]} document misc details are : {document[2]} ")
-            else:
-                #No match found
-                print(f"No match found ")
-                print(f'No close match in database found, closest found distance of {document[1]} with image_id {document[0]} with misc: {document[2]}')
-                return f"No close match in database found, closest found euclidean distance of {document[1]}", 404   
+            count+=1
+            ham = hamming_distance(document[1], quad_tree.root.phash)
             
+            print(f"{count} hamming_distance:  {ham}")
+            
+            if(ham < lowest_hamming):
+                lowest_hamming = ham
+                image_id = document[0]
+                lowest_misc = document[2]
+                print(f'**Found a better match at hamming distance of {document[1]} document misc details are : {lowest_misc} ')
+
+        
+        print(f"Chosen a match at lowest_hamming distance of {lowest_hamming} document misc details are : {lowest_misc} ")
         
         new_image_filename = secure_filename(new_image_file.filename)
         output_folder = os.path.join(current_app.config['OUTPUT_FOLDER'], os.path.splitext(new_image_filename)[0])

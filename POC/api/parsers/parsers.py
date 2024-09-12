@@ -23,3 +23,8 @@ search_parser.add_argument('image', location='files', type=FileStorage, required
 search_parser.add_argument('threshold', type=int, required=True, help='Threshold for comparison', default=10)
 search_parser.add_argument('compare_depth', type=int, required=True, help='Depth for comparison', default=5)
 
+locate_parser = reqparse.RequestParser()
+locate_parser.add_argument('image', location='files', type=FileStorage, required=True, help='Image to search')
+locate_parser.add_argument('threshold', type=int, required=True, help='Threshold for comparison', default=10)
+locate_parser.add_argument('compare_depth', type=int, required=True, help='Depth for comparison', default=5)
+
