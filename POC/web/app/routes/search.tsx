@@ -9,6 +9,8 @@ import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import Switch from "react-switch";
 import fs from 'fs';
 import path from 'path';
+import { Tooltip } from 'react-tooltip'
+
 
 export const meta: MetaFunction = () => {
     return [
@@ -60,17 +62,23 @@ export default function Search() {
     const fetcher = useFetcher()
     const [imageQT, setImageQT] = useState()
     const [image, setImage] = useState()
-    const [threshold, setThreshold] = useState(2)
+    const [threshold, setThreshold] = useState(6)
     const [depth, setDepth] = useState(5)
     const [loading, setLoading] = useState(false)
     const [checked, setChecked] = useState(false)
+    const [data, setData] = useState(null)
 
     useEffect(() => {
+        
         if (fetcher?.state != "idle") {
+            setData(null)
             setLoading(true)
         } else {
             setLoading(false)
+            console.log('fetcher data!!', fetcher.data)
+            setData(fetcher?.data?.data)
         }
+       
     }, [fetcher?.state])
 
     const percent = (value) => {
@@ -86,28 +94,6 @@ export default function Search() {
       </div>
       <fetcher.Form method="POST" encType="multipart/form-data" className="flex flex-col w-full">
         <div className="files flex flex-row items-center">
-            {/* <div className="w-1/2 p-5">
-                <div className="flex items-center justify-center w-full">
-                    <label htmlFor="file" className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600 p-3">
-                        <div className="flex flex-col items-center justify-center pt-5 pb-6 text-black w-full">
-                            <Icon.FileText size={40} />
-                            {imageQT ?
-                            <>
-                                <p className="text-sm text-gray-500 w-2/3 my-3">{imageQT?.name}</p>
-                                <p className="bg-black px-5 py-2 text-white rounded-full text-sm">Change</p>
-                            </>
-                            :
-                            <>
-                                <p className="my-2 font-bold text-black">Quad tree file upload</p>
-                                <p className="mb-2 text-sm text-gray-500 dark:text-gray-400"><span className="font-semibold">Click to upload</span> or drag and drop</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">.qt file (MAX. 500mb)</p>
-                            </>
-                            }
-                        </div>
-                        <input id="file" name="file" type="file" onChange={e => setImageQT(e?.target?.files[0])} className="sr-only" />
-                    </label>
-                </div> 
-            </div> */}
             <div className="w-1/2 p-5 m-auto">
                 <div className="flex items-center justify-center w-full">
                     <label htmlFor="image" className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600 p-3">
@@ -129,6 +115,27 @@ export default function Search() {
                         <input id="image" name="image" type="file" onChange={e => setImage(e?.target?.files[0])} className="sr-only" />
                     </label>
                 </div> 
+                <div className="relative mb-6 text-left mt-5">
+                    <label htmlFor="depth" className="text-xs text-left w-full font-bold flex flex-row">
+                        Threshold 
+                        <a data-tooltip-id="my-tooltip" data-tooltip-html="<p class='my-2'>Threshold is how close to the original an image needs to be to show similarity.</p><p class='mb-2'> Higher numbers mean a looser match.</p><p class='mb-2'> A threshold of 6 is a good place to start.</p>">
+                            <Icon.Info className="ml-1" size={15} />
+                        </a>
+                    </label>
+                    <input id="depth" name="depth" type="range" defaultValue={threshold} onChange={e => setThreshold(parseInt(e.target.value))} min="1" max="10" className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black dark:bg-gray-700" />
+                    <ul className="flex justify-between w-full px-[10px] text-xs text-gray-500">
+                        <li className="flex justify-center relative"><span className="absolute">1</span></li>
+                        <li className="flex justify-center relative"><span className="absolute">2</span></li>
+                        <li className="flex justify-center relative"><span className="absolute">3</span></li>
+                        <li className="flex justify-center relative"><span className="absolute">4</span></li>
+                        <li className="flex justify-center relative"><span className="absolute">5</span></li>
+                        <li className="flex justify-center relative"><span className="absolute">6</span></li>
+                        <li className="flex justify-center relative"><span className="absolute">7</span></li>
+                        <li className="flex justify-center relative"><span className="absolute">8</span></li>
+                        <li className="flex justify-center relative"><span className="absolute">9</span></li>
+                        <li className="flex justify-center relative"><span className="absolute">10</span></li>
+                    </ul>
+                </div>
             </div>
         </div>
         
@@ -151,14 +158,14 @@ export default function Search() {
         </div>
       </fetcher.Form>
       
-      {fetcher?.data && fetcher?.data?.success && fetcher?.data?.data &&
+      {data &&
         <div className="w-full h-full flex flex-col lg:flex-row items-center justify-center">
             <div className="lg:w-1/2 p-20 flex flex-col items-center justify-center order-1 lg:order-0">
                 <p className="text-3xl font-bold mb-5">Image similarity</p>
                 <CircularProgressbar 
                     className="w-full max-w-[180px]" 
-                    value={percent(fetcher?.data?.data?.stats?.proportion)} 
-                    text={`${percent(fetcher?.data?.data?.stats?.proportion)}%`}
+                    value={percent(data?.stats?.proportion)} 
+                    text={`${percent(data?.stats?.proportion)}%`}
                     styles={buildStyles({
                         // Rotation of path and trail, in number of turns (0-1)
                         rotation: 0,
@@ -188,8 +195,8 @@ export default function Search() {
                     <p className="my-2 py-2 border-gray-200 border-b flex flex-row justify-between">Image: <span className="text-black ml-2">{image?.name}</span></p>
                     <p className="my-2 py-2 border-gray-200 border-b flex flex-row justify-between">Threshold: <span className="text-black ml-2">{threshold}</span></p>
                     <p className="my-2 py-2 border-gray-200 border-b flex flex-row justify-between">Depth: <span className="text-black ml-2">{depth}</span></p>
-                    <p className="my-2 py-2 border-gray-200 border-b flex flex-row justify-between">Total image pixels: <span className="text-black ml-2">{fetcher?.data?.data?.stats?.total_pixels}</span></p>
-                    <p className="my-2 py-2 border-gray-200 border-b flex flex-row justify-between">Total matched pixels: <span className="text-black ml-2">{fetcher?.data?.data?.stats?.matched_pixels}</span></p>
+                    <p className="my-2 py-2 border-gray-200 border-b flex flex-row justify-between">Total image pixels: <span className="text-black ml-2">{data?.stats?.total_pixels}</span></p>
+                    <p className="my-2 py-2 border-gray-200 border-b flex flex-row justify-between">Total matched pixels: <span className="text-black ml-2">{data?.stats?.matched_pixels}</span></p>
                     <p className="my-2 py-2 flex flex-row justify-between">Perceptual algorithm: <span className="text-black ml-2">PDQ</span></p>
                 </div>
             </div>
@@ -209,13 +216,13 @@ export default function Search() {
                 </div>
                 <ReactCompareSlider
                     position={50}
-                    itemOne={<ReactCompareSliderImage src={fetcher.data.data.new_image} alt="Original image" />}
-                    itemTwo={<ReactCompareSliderImage src={checked ? fetcher.data.data.comparison_image : fetcher.data.data.highlight_image} alt="Comparison image" />}
+                    itemOne={<ReactCompareSliderImage src={data?.new_image} alt="Original image" />}
+                    itemTwo={<ReactCompareSliderImage src={checked ? `${data?.comparison_image}?t=${Date.now()}` : `${data?.highlight_image}?t=${Date.now()}`} alt="Comparison image" />}
                 />
             </div>
         </div>
       }
-
+    <Tooltip id="my-tooltip" style={{maxWidth:250}} />
     </div>
     </>
   );
