@@ -62,7 +62,7 @@ def bits_to_hex(bits):
     return hex_string
 
 def hex_to_binary_vector(hex_str):
-    print(f"hex_to_binary_vector called with {hex_str}")
+    #print(f"hex_to_binary_vector called with {hex_str}")
     # Convert the hex string to binary string
     binary_str = bin(int(hex_str, 16))[2:].zfill(len(hex_str) * 4)
     # Convert binary string to a list of integers (0 and 1)
@@ -418,6 +418,29 @@ def draw_comparison(image_list, list_pixel_counter, node1 : QuadTreeNode, node2 
     y = int(y0 + (y1 - y0) / 2)
     if (node1.removed):
         list_pixel_counter[0] += (x1-x0) * (y1-y0)
+        
+#alt visualisation - draw onto an image image_list[2] which needs to be prepped as a copy of the original.  
+#This is POC experimentaiton -  **really** inefficient with lots of copying of iamges- better to do in pillow 
+    
+    if (node1.is_leaf_node() or node2.is_leaf_node()):
+        print(f"**Found a leaf node Drawing a rectangle for {node1.path} {node2.path} {output_path} {counter[0]} {threshold_cli} {compare_depth_cli}")
+        distance = hamming_distance(node1.phash, node2.phash)
+        alpha = 2 * distance / 255   #This may be modified to allow a more sophistication scaling for size reducing the intensity of small cells
+        if alpha > 1:
+            alpha = 1
+        rectangle_color = (0, 0, 255)  # Red color in BGR format                
+        # Create a copy of the image to draw the rectangle on
+#TODO this is inefficient - better to do in pillow or find an approach that doesn't need to keep copying the image.  Consider perhaps allowing a scratch image to be sent in image_list and reuse that or to do one blend at the end? 
+        overlay = image_list[2].copy()
+
+        # Draw the filled rectangle on the overlay image
+        cv2.rectangle(overlay, (x0, y0), (x1, y1), rectangle_color, -1)
+
+        # Blend the overlay with the original image using the transparency factor
+        cv2.addWeighted(overlay, alpha, image_list[2], 1 - alpha, 0, image_list[2])
+
+        
+ #Existing for the rectangles       
     color = (0, 255, 0) if node1.removed else (0, 0, 255)
     cv2.rectangle(image_list[0], (x0, y0), (x1, y1), color, 4)
     cv2.putText(image_list[0], str(node1.ham_distance), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1.5, color, 2)
@@ -431,6 +454,7 @@ def draw_comparison(image_list, list_pixel_counter, node1 : QuadTreeNode, node2 
         return
     current_app.logger.debug(f"Writing {output_path}/comparison_t{threshold_cli}_d{compare_depth_cli}_{node1.hash_algorithm}_{counter[0]:04}.jpg")
     cv2.imwrite(f"{output_path}/comparison_t{threshold_cli}_d{compare_depth_cli}_{node1.hash_algorithm}_{counter[0]:04}.jpg", image_list[0], [int(cv2.IMWRITE_JPEG_QUALITY), 50])
+
 
 # Compares two nodes and outputs the comparison images
 def compare_and_output_images(
@@ -505,6 +529,7 @@ def create_red_overlay(original_image_path, mask_image_path, output_image_path, 
     final_image = Image.alpha_composite(original_image, red_overlay)
     final_image.save(output_image_path)
     current_app.logger.debug(f"Overlay image created successfully with {translucence}% translucence: {output_image_path}")
+
 
 # Returns a list of available perceptual hashing algorithms
 def list_available_algorithms():

@@ -56,7 +56,7 @@ def search_images(image, threshold = 5, compare_depth = 5):
             ham = hamming_distance(document[1], quad_tree.root.phash)
 
             
-            print(f"{count} hamming_distance:  {ham}")
+            print(f"{count} hamming_distance:  {ham} image_id: {document[0]}")
             
             if(ham < lowest_hamming):
                 lowest_hamming = ham

@@ -80,6 +80,9 @@ def hoprs_encode(server_url, file, depth=5, algorithm='pdq', resize=None, crop=N
         response.raise_for_status()
         response_json = response.json()
         print(str(response_json))
+        print("Downloading files...")
+        process_response_for_urls(response_json)
+        
         
     except requests.exceptions.RequestException as e:
         handle_request_error(e)

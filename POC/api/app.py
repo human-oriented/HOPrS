@@ -30,7 +30,7 @@ if not os.path.exists(output_folder):
     os.makedirs(output_folder)
 
 api = Api(app, version='0.0.7', title='HOPrS', description='Open standard for content authentication')
-ns = api.namespace('hoprs', description='Human oriented proof standard')
+ns = api.namespace('hoprs', description='Human Oriented Proof Standard')
 
 @ns.route('/download/')
 class Download(Resource):
@@ -73,10 +73,10 @@ class Encode(Resource):
 
         if file.filename == '':
             return "No selected file", 400
-        
-        if depth < 0 or depth > 6:
-            return "Compare depth must be between 1 and 6.", 400
-        
+
+        if depth > 10:
+            return "Encode depth limited to 10 layers, more than this unless with _exceptionally_ huge images is pointless", 400
+
         valid, message = validate_image(file)
         if not valid:
             return message
@@ -92,10 +92,12 @@ class Encode(Resource):
             crop = tuple(map(int, crop.split(',')))
 
         try:
-            response = encode_image(filepath, depth, algorithm, resize, crop, note, file)
-            return send_file(response, as_attachment=True)
+            response = encode_image(filepath, depth, algorithm, resize, crop, note, file, output_folder)
+            return response
+            #return send_file(response, as_attachment=True)
 
         except Exception as e:
+            print(str(e))
             return str(e), 500
 
 # Compares an uploaded image to a quad tree file
@@ -111,11 +113,11 @@ class Compare(Resource):
         threshold = args['threshold']
         compare_depth = args['compare_depth']
 
-        if threshold < 0 or threshold > 11:
-            return "Threshold must be between 1 and 10.", 400
+        if threshold < 0 or threshold > 100:
+            return "Threshold must be between 1 and 100.", 400
         
-        if compare_depth < 0 or compare_depth > 6:
-            return "Compare depth must be between 1 and 6.", 400
+        if compare_depth < 1 or compare_depth > 10:
+            return "Compare depth must be between 1 and 10.", 400
 
         if original_image_qt_file.filename == '' or new_image_file.filename == '':
             return "No selected file", 400

@@ -47,6 +47,8 @@ def create_images(original_image_qt, new_image, new_image_qt, output_folder, thr
     tree2 = parse_file_to_tree(new_image_qt)
     image = cv2.imread(new_image)  # Reuse the uploaded new image as the base image
 
+    alt_translucence_image = cv2.imread(new_image)  # Reuse the uploaded new image to draw on
+
     image_derivative = cv2.imread(new_image)
     height_1, width_1 = image.shape[:2]
     image_1 = np.zeros((height_1, width_1, 3), np.uint8)
@@ -54,17 +56,22 @@ def create_images(original_image_qt, new_image, new_image_qt, output_folder, thr
 
     pixel_counter = 0
     list_pixel_counter = [pixel_counter]
-    list_images = [image_derivative, image_1]
+    list_images = [image_derivative, image_1, alt_translucence_image]
 
     compare_and_output_images(list_images, list_pixel_counter, tree1, tree2, new_image, output_folder, threshold, [0], compare_depth)
 
     difference_mask_path = os.path.join(output_folder, "difference_mask.png")
-    cv2.imwrite(difference_mask_path, list_images[1], [int(cv2.IMWRITE_JPEG_QUALITY), 50])
+    cv2.imwrite(difference_mask_path, list_images[1])
 
     highlight_image_path = os.path.join(output_folder, "highlighted_image.png")
     create_red_overlay(new_image, difference_mask_path, highlight_image_path)
+    
     new_image_output_path = os.path.join(output_folder, os.path.basename(new_image))
     shutil.copy(new_image, new_image_output_path)
+
+    alt_transluence_path = os.path.join(output_folder, "alt_translucence.png")
+    cv2.imwrite(alt_transluence_path, list_images[2])
+
 
     unchanged_pixels = count_black_pixels(list_images[1])
     draw_comparison(list_images, list_pixel_counter, tree1, tree2, output_folder, [-1], threshold, compare_depth)
