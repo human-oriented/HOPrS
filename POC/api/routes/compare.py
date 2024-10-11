@@ -101,5 +101,6 @@ def create_images(original_image_qt, new_image, new_image_qt, output_folder, thr
             "comparison_image": url_for('get_file', folder=os.path.basename(output_folder), filename=os.path.basename(comparison_image_path), _external=True),
             "highlight_image": url_for('get_file', folder=os.path.basename(output_folder), filename=os.path.basename(highlight_image_path), _external=True),
             "new_image": url_for('get_file', folder=os.path.basename(output_folder), filename=os.path.basename(new_image_output_path), _external=True),
+            "alt_transluence": url_for('get_file', folder=os.path.basename(output_folder), filename=os.path.basename(alt_transluence_path), _external=True),
             "stats": stats
      }
