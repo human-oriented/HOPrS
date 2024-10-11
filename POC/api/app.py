@@ -29,13 +29,8 @@ if not os.path.exists(upload_folder):
 if not os.path.exists(output_folder):
     os.makedirs(output_folder)
 
-<<<<<<< HEAD
-api = Api(app, version='0.0.7', title='HOPrS', description='Open standard for content authentication')
+api = Api(app, version='0.0.11', title='HOPrS', description='Open standard for content authentication')
 ns = api.namespace('hoprs', description='Human Oriented Proof Standard')
-=======
-api = Api(app, version='0.0.10', title='HOPrS', description='Open standard for content authentication')
-ns = api.namespace('hoprs', description='Human oriented proof standard')
->>>>>>> 1dbd70dd96778bbf9231d470252b00dacf14d017
 
 @ns.route('/download/')
 class Download(Resource):
