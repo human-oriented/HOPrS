@@ -72,6 +72,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <li className={`${pathname == '/' ? 'border-b border-gray-200 text-gray-500 cursor-default' : ''} py-3`}><Link className="" to="/">HOME</Link></li>
                   <li className={`${pathname == '/encode' ? 'border-b border-gray-200 text-gray-500 cursor-default' : ''} py-3`}><Link className="" to="/encode">ENCODE</Link></li>
                   <li className={`${pathname == '/compare' ? 'border-b border-gray-200 text-gray-500 cursor-default' : ''} py-3`}><Link className="" to="/compare">COMPARE</Link></li>
+                  <li className={`${pathname == '/search' ? 'border-b border-gray-200 text-gray-500 cursor-default' : ''} py-3`}><Link className="" to="/search">SEARCH</Link></li>
                 </span>
                 <span>
                   <li className="my-3"><a className="flex flex-row items-center w-full" href="https://www.human-oriented.org/" target="_blank"><span>LEARN MORE</span> <Icon.ExternalLink className="ml-1" /></a></li>

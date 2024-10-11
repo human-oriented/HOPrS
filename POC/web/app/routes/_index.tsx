@@ -18,7 +18,7 @@ export default function Index() {
       </div>
       <Link className="my-3" to="/encode">Encode</Link>
       <Link className="mb-3" to="/compare">Compare</Link>
-      
+      <Link className="mb-3" to="/search">Search</Link>
     </div>
   );
 }
